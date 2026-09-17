@@ -1,91 +1,32 @@
 # SCUTUM
 
-> Platforma za upravljanje informacionom bezbednošću i digitalnim poverenjem.
+SCUTUM je platforma za upravljanje informacionom bezbednošću i digitalnim
+poverenjem. Objedinjuje rad sa identitetima i pristupom, bezbednosnim
+politikama, evidencijom resursa, audit događajima, incidentima, rizicima i
+dokazima o primenjenim kontrolama.
 
-SCUTUM je zajednički projekat za predmet **Osnove informacione bezbednosti**
-(Fakultet tehničkih nauka – Primenjeno softversko inženjerstvo). Kroz timski
-razvoj gradimo bezbednosnu platformu za upravljanje identitetima, pristupom,
-politikama, tajnama, bezbednosnim događajima, incidentima, rizicima i dokazima.
+Ovaj repozitorijum je zajedničko mesto za razvoj projekta u okviru predmeta
+**Osnove informacione bezbednosti** na Fakultetu tehničkih nauka – Primenjeno
+softversko inženjerstvo.
 
-Projekat je **isključivo defanzivnog karaktera**. Sumnjive aktivnosti i
-nedozvoljeni pristupi reprodukuju se samo nad kontrolisanim simulatorima i
-testnim identitetima.
+## Rad na projektu
 
-## Početak rada
+Projektne celine, zahtevi i kriterijumi dostavljaju se studentima kroz zasebnu
+projektnu specifikaciju u PDF formatu i kroz zadatke u Tapiz Boards-u.
 
-1. Pročitajte [kompletnu specifikaciju](docs/SCUTUM_OIB_Projektna_specifikacija.md).
-2. Nastavni tim dodeljuje projektnu celinu (R1, R2 ili R3) i zadatak u Tapiz
-   Boards-u.
-3. Napravite feature granu iz `main`:
-
-   ```bash
-   git checkout main
-   git pull
-   git checkout -b feature/R1-01-kratak-opis
-   ```
-
-4. Implementirajte funkcionalnost, testove i potrebnu dokumentaciju.
-5. Otvorite Pull Request prema `main` i povežite ga sa zadatkom.
-
-Detalji procesa su u [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Pravila rada
-
-- Direktan push na `main` nije dozvoljen.
-- Svaka promena ide kroz Pull Request i code review.
+- Za svaki zadatak napravite feature granu iz `main`.
+- Promene se predaju Pull Request-om; direktan push na `main` nije dozvoljen.
+- Pre merge-a potreban je review i uspešne provere.
 - Ne commitujte lozinke, tokene, sertifikate ni druge tajne.
-- Autorizacija se proverava na serverskoj strani; UI ograničenja nisu dovoljna.
-- Za bezbednosno relevantnu celinu obavezni su threat/misuse scenario,
-  automatizovan negativni test i audit dokaz gde je relevantan.
-- Ne implementirati sopstvene kriptografske algoritme; koristite proverene
-  biblioteke i testne/simulirane kredencijale.
 
-## Razvojni nivoi
+Detaljna pravila rada nalaze se u [CONTRIBUTING.md](CONTRIBUTING.md). Šabloni za
+Pull Request, threat model i arhitektonske odluke nalaze se u ovom repozitorijumu.
 
-| Nivo | Fokus |
-| --- | --- |
-| **R1 – Osnovni** | identiteti, resursi, klasifikacija, RBAC/autorizacija, politike i audit |
-| **R2 – Operativni** | MFA, sesije, tajne, detekcija, incidenti i ranjivosti |
-| **R3 – Napredni** | policy engine, access review, rizik, korelacija i automatizovan response |
-
-Spisak svih celina i njihovih preduslova nalazi se u poglavlju 6 specifikacije.
-Oznake R1/R2/R3 označavaju funkcionalne preduslove, a ne akademsku godinu.
-Teme dodeljuje nastavni tim.
-
-## Definition of Done
-
-Pre nego što PR bude spreman za spajanje, tim treba da može da pokaže lanac:
-
-```text
-Asset → Threat / misuse → Security requirement → Control → Security test → Evidence
-```
-
-Minimalno se očekuju ispunjeni acceptance kriterijumi, automatizovani testovi,
-jedan negativni bezbednosni scenario, ažurirana dokumentacija/ADR kada je
-potrebno, uspešan CI i odobren review.
-
-## Predložena struktura projekta
-
-Arhitektura treba da jasno razdvaja domen, use-case sloj i infrastrukturu
-(Clean Architecture ili ekvivalent). Referentna tehnologija je **.NET / C#**;
-drugu tehnologiju odobrava nastavni tim uz dokaz interoperabilnosti i
-ekvivalentnog nivoa testiranja.
+## Predložena struktura
 
 ```text
 src/            aplikacioni kod
-tests/          unit, integration i security testovi
-docs/           specifikacije, ADR-ovi i threat modeli
-.github/        CI i GitHub šabloni
+tests/          automatizovani testovi
+docs/           ADR-ovi i threat modeli po projektnim celinama
+.github/        GitHub šabloni i CI konfiguracija
 ```
-
-## Korisne veze
-
-- [Projektna specifikacija](docs/SCUTUM_OIB_Projektna_specifikacija.md)
-- [Pravila doprinosa](CONTRIBUTING.md)
-- [Šablon za threat model](docs/templates/threat-model.md)
-- [Šablon za ADR](docs/templates/adr.md)
-
----
-
-Pitanja o dodeli celine, preduslovima ili arhitekturi postavite kroz odgovarajući
-issue ili nastavnom timu.
