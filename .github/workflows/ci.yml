@@ -1,0 +1,28 @@
+name: T03 build and security tests
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: dotnet restore Scutum.T03.sln
+      - run: dotnet build Scutum.T03.sln --no-restore --configuration Release
+      - run: dotnet test Scutum.T03.sln --no-build --configuration Release --logger "trx;LogFileName=security.trx" --results-directory TestResults
+      - run: python scripts/check_source.py
+      - run: dotnet run --project src/Scutum.T03.ConsoleUi --configuration Release --no-build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-evidence
+          path: TestResults/*.trx
