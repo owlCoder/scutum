@@ -13,7 +13,8 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Na PR-u novi push otkazuje stari run; na main-u svaki merge mora dobiti svoj završen run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   structure:
@@ -75,13 +76,22 @@ jobs:
   ci-ok:
     name: ci-ok
     if: always()
-    needs: [structure, secrets, service-tests]
+    # 'detect' mora biti u needs: ako on padne, service-tests je 'skipped', a to ne sme da se računa kao uspeh.
+    needs: [structure, secrets, detect, service-tests]
     runs-on: ubuntu-latest
     steps:
       - env:
           STRUCTURE: ${{ needs.structure.result }}
           SECRETS: ${{ needs.secrets.result }}
+          DETECT: ${{ needs.detect.result }}
+          SERVICES: ${{ needs.detect.outputs.services }}
           TESTS: ${{ needs.service-tests.result }}
         run: |
-          echo "structure=$STRUCTURE secrets=$SECRETS service-tests=$TESTS"
-          [ "$STRUCTURE" = success ] && [ "$SECRETS" = success ] && { [ "$TESTS" = success ] || [ "$TESTS" = skipped ]; }
+          echo "structure=$STRUCTURE secrets=$SECRETS detect=$DETECT services=$SERVICES service-tests=$TESTS"
+          [ "$STRUCTURE" = success ] && [ "$SECRETS" = success ] && [ "$DETECT" = success ] || exit 1
+          # Preskakanje testova je dozvoljeno samo kada detect nije našao nijedan aktivan izmenjen servis.
+          if [ "$SERVICES" = "[]" ]; then
+            [ "$TESTS" = skipped ] || [ "$TESTS" = success ]
+          else
+            [ "$TESTS" = success ]
+          fi
