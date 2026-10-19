@@ -43,8 +43,8 @@ for dir in services/*/; do
       err "$dir/.env.example: DB_PORT_HOST mora biti $((3400 + n))"
     grep -q "^DB_HOST=t$nn-db$" "$dir/.env.example" ||
       err "$dir/.env.example: DB_HOST mora biti t$nn-db"
-    grep -q '^DB_PORT=3306$' "$dir/.env.example" ||
-      err "$dir/.env.example: DB_PORT mora biti 3306"
+    grep -Eq '^DB_PORT=[0-9]{2,5}$' "$dir/.env.example" ||
+      err "$dir/.env.example: DB_PORT mora postojati (port baze unutar kontejnera, npr. 3306 za MySQL ili 5432 za PostgreSQL)"
   fi
 
   if [ -f "$dir/docker-compose.yml" ]; then
@@ -56,6 +56,9 @@ for dir in services/*/; do
   fi
   if git ls-files --error-unmatch "$dir/.env" >/dev/null 2>&1; then
     err "$dir/.env je commit-ovan — ukloniti (git rm --cached) i rotirati vrednosti"
+  fi
+  if [ "$st" = "scaffold" ] && [ -n "$(git ls-files -- "$dir/src" "$dir/tests" | grep -v '/\.gitkeep$')" ]; then
+    warn "$dir: src/ ili tests/ sadrže kod, a status je 'scaffold' — CI ne pokreće testove ovog servisa"
   fi
   if [ "$st" = "active" ]; then
     [ -f "$dir/docs/threat-model.md" ] || warn "$dir: aktivan servis nema docs/threat-model.md (obavezno po specifikaciji, 5.3)"
