@@ -5,6 +5,7 @@ obj/
 # IDE
 .vs/
 .vscode/
+.idea/
 *.user
 *.suo
 
@@ -13,7 +14,32 @@ obj/
 .env.*
 !.env.example
 secrets.json
+*.pfx
+*.p12
+*.key
 
 # Test artifacts
 TestResults/
 coverage/
+
+# Node / TypeScript
+node_modules/
+dist/
+.next/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Java / Kotlin / Rust / Go
+target/
+*.class
+.gradle/
+out/
+
+# Logovi i OS fajlovi
+*.log
+.DS_Store
+Thumbs.db

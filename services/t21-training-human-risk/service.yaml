@@ -1,0 +1,13 @@
+# Metapodaci servisa. Čita ih CI i skripte (zato ostaje ravan "ključ: vrednost" format).
+id: T21
+slug: training-human-risk
+title: "Training i human-risk analitika"
+components: "R1-22, R2-22, R3-22"
+team: ""                 # broj vašeg tima
+stack: "nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)"
+# scaffold = prazan šablon, CI preskače testove; active = servis ima 'tests' profil i CI ga pokreće
+status: scaffold
+# Portovi se NE menjaju (formula: api 8000+NN, ui 8100+NN, db 3400+NN)
+api_port: 8021
+ui_port: 8121
+db_port: 3421

@@ -1,0 +1,48 @@
+openapi: 3.0.3
+info:
+  title: C-IME-v1
+  version: "1.0.0"
+  description: Kratak opis ugovora. Stanje (DRAFT/ACCEPTED/...) vodi se u README.md i REGISTRY.md.
+paths:
+  /internal/v1/primer/{id}:
+    get:
+      operationId: getPrimer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, pattern: "^[a-z][a-z0-9-]{0,63}$" }   # SEC-CONV-01: format identifikatora
+        - name: X-Correlation-Id
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Uspeh
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Primer" }
+        "404":
+          description: Ne postoji (ili nije vidljivo pozivaocu — isti odgovor)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: Servis privremeno nedostupan; consumer ne sme da tumači kao prazan uspeh
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+components:
+  schemas:
+    Primer:
+      type: object
+      required: [id, scopeId]
+      properties:
+        id: { type: string }
+        scopeId: { type: string }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, example: NOT_FOUND }   # SEC-CONV-03: stabilan kod, consumer ne parsira message
+        message: { type: string }
