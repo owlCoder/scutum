@@ -133,8 +133,8 @@ U `.env` se podešavaju razvojne vrednosti:
 
 - `API_PORT` — port API-ja na host računaru;
 - `DB_PORT_HOST` — port baze na `127.0.0.1` za alate poput DBeaver-a;
-- `DB_HOST` i `DB_PORT` — adresa baze iz kontejnera;
-- `DB_NAME`, `DB_USER`, `DB_PASSWORD` i `MYSQL_ROOT_PASSWORD` — lokalna DB konfiguracija.
+- `DB_HOST` i `DB_PORT` — adresa baze iz kontejnera (`DB_PORT` zavisi od baze: 3306 za MySQL, 5432 za PostgreSQL);
+- `DB_NAME`, `DB_USER`, `DB_PASSWORD` i `MYSQL_ROOT_PASSWORD` — lokalna DB konfiguracija (tim koji menja bazu menja i ove promenljive).
 
 `.env.example` sadrži samo bezbedne razvojne placeholder vrednosti. Za staging ili produkciju
 vrednosti se prosleđuju kroz platformu za deployment/secrets manager; stvarne lozinke, tokene i
@@ -165,11 +165,12 @@ ali zajednička pravila (njih proverava CI) ostaju ista:
 
 | Pravilo | Zašto |
 | --- | --- |
-| Ime compose projekta `scutum-tNN`, servisi `tNN-api`, `tNN-db`, `tNN-tests` | Nema sudara naziva u zajedničkoj mreži |
+| Ime compose projekta `scutum-tNN`, servisi `tNN-api`, `tNN-db`, `tNN-tests` (ili više: `tNN-tests-<naziv>`) | Nema sudara naziva u zajedničkoj mreži |
 | Servis sluša na `8080`, `GET /health` vraća 200 | Isti način provere za sve jezike |
 | Samo `api` je na mreži `scutum-net`; baza ostaje privatna | Niko ne može da dohvati tuđu bazu (SEC-CONV-10) |
 | Portovi samo na `127.0.0.1`, po formuli iz tabele | Servisi na laptopu nisu izloženi mreži fakulteta |
-| Profil `tests` pokreće sve testove i vraća exit kod ≠ 0 pri padu | CI ne zna vaš jezik, samo poziva ovaj profil |
+| Profil `tests` pokreće sve testove i vraća exit kod ≠ 0 pri padu; više test servisa (npr. `t10-tests-api` i `t10-tests-ui`) se pokreće redom i pad bilo kog obara proveru | CI ne zna vaš jezik, samo poziva ovaj profil |
+| Port baze u kontejneru (`DB_PORT`) bira tim; host port je uvek `3400+NN` | Slobodan izbor baze bez sudara portova |
 | Konfiguracija kroz promenljive okruženja; `.env` se ne commituje | SEC-OPS-06, SEC-BASE-04 |
 | Migracije formiraju šemu nad praznom bazom; seed pokazuje normalan i negativan scenario | SEC-OPS-02, SEC-OPS-03 |
 
@@ -203,12 +204,14 @@ Svoj CI ipak pišete vi, unutar svog foldera, jer CI samo poziva vaš profil `te
 
 1. `structure` — proverava da svaki servis prati strukturu i konvencije iz ovog README-a.
 2. `secrets` — osnovna provera praćenih fajlova na `.env`, ključeve i tokene (ne zamenjuje namenske alate).
-3. `tests (tNN)` — za svaki **izmenjen servis sa `status: active`** pokreće `docker compose --profile tests run` iz njegovog foldera.
-   Servisi sa `status: scaffold` se preskaču. Ako menjate zajedničke fajlove (`scripts/`, `.github/workflows/`), proveravaju se svi aktivni servisi.
-4. `ci-ok` — zbirni rezultat; to je provera koju treba tražiti kao obaveznu pre merge-a.
+3. `tests (tNN)` — za svaki **izmenjen servis sa `status: active`** pokreće sve `tNN-tests*` servise profila `tests` iz njegovog foldera.
+   Servisi sa `status: scaffold` se preskaču (`structure` upozorava kada scaffold servis već ima kod u `src/` ili `tests/`).
+   Ako menjate zajedničke fajlove (`scripts/`, `.github/workflows/`), proveravaju se svi aktivni servisi.
+   Izmena ugovora u `contracts/tNN/<C-IME-vN>/` pokreće testove owner-a i consumera navedenih u `contracts/REGISTRY.md`.
+4. `ci-ok` — zbirni rezultat; to je provera koju treba tražiti kao obaveznu pre merge-a. Pada i kada detekcija izmenjenih servisa ne uspe.
 
 Sve ovo možete pokrenuti lokalno: `bash scripts/ci/check-structure.sh`, `bash scripts/ci/check-secrets.sh`, `bash scripts/scutum.sh test <tNN>`.
-Ako vaši testovi pišu rezultate u `TestResults/` unutar servisa, CI ih čuva kao artefakt (dokaz za audit).
+Test kontejner ima montiran `TestResults/` servisa na `/results`; šta vaši testovi tamo upišu (npr. `.trx`, JUnit XML), CI čuva kao artefakt (dokaz za audit).
 
 ## UI i demo
 

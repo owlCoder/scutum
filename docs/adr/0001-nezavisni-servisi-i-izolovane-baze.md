@@ -26,7 +26,8 @@ omogućilo različite tehnologije.
 3. **Komunikacija samo preko ugovora** u `contracts/` (OpenAPI/šeme) sa registrom i životnim ciklusom iz specifikacije;
    nema deljenog koda između servisa.
 4. **Tehnologija je izbor tima.** Šablon dolazi sa MySQL 8 i placeholder Dockerfile-om kao podrazumevanim,
-   ne obaveznim. Zajednički interfejs je Docker: `GET /health`, port 8080 u kontejneru, profil `tests`.
+   ne obaveznim; CI ne proverava vrstu baze ni njen port u kontejneru, samo host port `3400+NN`.
+   Zajednički interfejs je Docker: `GET /health`, port 8080 u kontejneru, profil `tests` (servis `tNN-tests` ili više `tNN-tests-<naziv>`).
 5. **Globalni CI** (`.github/workflows/ci.yml`) proverava strukturu i tajne, a za izmenjene servise sa
    `status: active` pokreće `docker compose --profile tests` iz njihovog foldera. Servisi sa `status: scaffold` se preskaču.
 6. **UI je opcioni i pripada servisu** (konzola, web, Swagger); nema zajedničkog front-a ni gateway-a u ovoj fazi.
