@@ -2,6 +2,7 @@
 # Konvencije koje treba zadržati:
 #   * stage 'runtime' = servis koji sluša na portu 8080 i odgovara na GET /health
 #   * stage 'test'    = pokreće sve testove i vraća exit kod != 0 kada neki padne (koristi ga profil 'tests')
+#     i rezultate (npr. .trx / JUnit XML) piše u /results — CI ih čuva kao dokaz (services/<tNN>-*/TestResults)
 
 FROM busybox:1.36 AS test
 CMD ["sh", "-c", "echo 'SCAFFOLD: dodajte testove i zamenite ovaj stage' && exit 1"]

@@ -110,11 +110,23 @@ cmd_test() {
   need_docker; ensure_net; ensure_env "$d"
   ( cd "$d"
     if ! docker compose config --profiles | grep -qx tests; then
-      echo "::error::$id: docker-compose.yml nema profil 'tests' (servis ${id}-tests)"; exit 1
+      echo "::error::$id: docker-compose.yml nema profil 'tests' (servis ${id}-tests ili ${id}-tests-<naziv>)"; exit 1
+    fi
+    # Svi servisi profila 'tests' čije ime je tNN-tests ili tNN-tests-<naziv> (npr. t10-tests-api, t10-tests-ui).
+    local suites
+    suites="$(docker compose --profile tests config --services | grep -E "^${id}-tests(-[a-z0-9-]+)?\$" | sort || true)"
+    if [ -z "$suites" ]; then
+      echo "::error::$id: profil 'tests' nema servis ${id}-tests ni ${id}-tests-<naziv>"; exit 1
     fi
     trap 'docker compose --profile tests down --volumes --remove-orphans >/dev/null 2>&1 || true' EXIT
-    echo "==> test $id"
-    docker compose --profile tests run --rm --build "${id}-tests"
+    local suite failed=""
+    for suite in $suites; do
+      echo "==> test $id ($suite)"
+      docker compose --profile tests run --rm --build "$suite" || failed="$failed $suite"
+    done
+    if [ -n "$failed" ]; then
+      echo "::error::$id: testovi nisu prošli:$failed"; exit 1
+    fi
   )
 }
 

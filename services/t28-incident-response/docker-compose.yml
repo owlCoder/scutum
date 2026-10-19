@@ -55,8 +55,8 @@ services:
       DB_NAME: ${DB_NAME:?kopirajte .env.example u .env}
       DB_USER: ${DB_USER:?kopirajte .env.example u .env}
       DB_PASSWORD: ${DB_PASSWORD:?kopirajte .env.example u .env}
-    # volumes:
-    #   - ./TestResults:/results        # CI uploaduje services/<tNN>-*/TestResults kao dokaz
+    volumes:
+      - ./TestResults:/results          # rezultate testova pišite u /results; CI ih uploaduje kao dokaz
     depends_on:
       t28-db:
         condition: service_healthy
