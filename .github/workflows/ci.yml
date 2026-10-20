@@ -33,6 +33,19 @@ jobs:
       - uses: actions/checkout@v4
       - run: bash scripts/ci/check-secrets.sh
 
+  # Testovi zajedničkih skripti: compose politika (negativni slučajevi) i izolacija 'scutum.sh test'
+  # od razvojnog 'up' (pravi Docker, busybox kontejneri). Brzi su, pa se izvršavaju na svakom PR-u.
+  selftest:
+    name: selftest (scripts)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: check-structure — negativni testovi compose politike
+        run: bash scripts/ci/selftest/check-structure.test.sh
+      - name: scutum.sh test — izolacija od razvojnog okruženja
+        run: bash scripts/ci/selftest/scutum-test-isolation.test.sh
+
   detect:
     name: detect changed services
     runs-on: ubuntu-latest
@@ -77,18 +90,19 @@ jobs:
     name: ci-ok
     if: always()
     # 'detect' mora biti u needs: ako on padne, service-tests je 'skipped', a to ne sme da se računa kao uspeh.
-    needs: [structure, secrets, detect, service-tests]
+    needs: [structure, secrets, selftest, detect, service-tests]
     runs-on: ubuntu-latest
     steps:
       - env:
           STRUCTURE: ${{ needs.structure.result }}
           SECRETS: ${{ needs.secrets.result }}
+          SELFTEST: ${{ needs.selftest.result }}
           DETECT: ${{ needs.detect.result }}
           SERVICES: ${{ needs.detect.outputs.services }}
           TESTS: ${{ needs.service-tests.result }}
         run: |
-          echo "structure=$STRUCTURE secrets=$SECRETS detect=$DETECT services=$SERVICES service-tests=$TESTS"
-          [ "$STRUCTURE" = success ] && [ "$SECRETS" = success ] && [ "$DETECT" = success ] || exit 1
+          echo "structure=$STRUCTURE secrets=$SECRETS selftest=$SELFTEST detect=$DETECT services=$SERVICES service-tests=$TESTS"
+          [ "$STRUCTURE" = success ] && [ "$SECRETS" = success ] && [ "$SELFTEST" = success ] && [ "$DETECT" = success ] || exit 1
           # Preskakanje testova je dozvoljeno samo kada detect nije našao nijedan aktivan izmenjen servis.
           if [ "$SERVICES" = "[]" ]; then
             [ "$TESTS" = skipped ] || [ "$TESTS" = success ]
