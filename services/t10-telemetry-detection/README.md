@@ -1,7 +1,7 @@
 # T10 — Log izvori, telemetry ingestion i detection tuning
 
-> **Status:** `scaffold` (prazan šablon). Kada servis dobije `tests` profil koji prolazi, promenite
-> `status: active` u [`service.yaml`](service.yaml) — od tada ga CI testira na svakom PR-u.
+> **Status:** `active` — CI pokreće `tests` profil (trenutno `t10-tests-ui`) na svakom PR-u.
+> Backend (.NET 10 + PostgreSQL) je u izradi; do tada `t10-api` je placeholder koji odgovara na `/health`.
 > Pravila strukture i konvencija: [README u korenu repozitorijuma](../../README.md).
 
 ## Odgovornost tima
@@ -12,7 +12,21 @@ Projektne celine:
 - **R2-17** — Security telemetry ingestion i normalizacija
 - **R3-15** — Detection engineering, simulacija i tuning pravila
 
-Tim: 1  ·  Stack: .NET / C# + MySQL 8 (odluka tima 1; ne važi za ostale timove)
+Tim: 1  ·  Stack: Next.js 16 (frontend); .NET 10 + PostgreSQL (backend, u izradi)
+
+## Struktura
+
+```text
+src/
+  backend/     .NET 10 rešenje (u izradi)
+  frontend/    Next.js aplikacija — samostalan npm projekat sa svojim Dockerfile-om i testovima
+tests/
+  backend/     .NET test projekti (u izradi)
+docs/          threat model, demo scenario
+```
+
+Frontend testovi (Vitest, Playwright) su namerno u `src/frontend/`, a ne u `tests/`: alati traže `node_modules`
+od mesta gde je test fajl, pa testovi van npm projekta ne bi našli `react` i `next`.
 
 <!-- Jednom rečenicom: šta ovaj servis radi i šta NE radi (granica odgovornosti). -->
 
@@ -44,9 +58,30 @@ repozitorijuma](../../README.md#preduslovi-i-brzi-početak-prvi-put-na-računaru
 | Šta | Gde |
 | --- | --- |
 | API (spolja) | `http://localhost:8010` (unutar mreže `scutum-net`: `http://t10-api:8080`) |
-| UI / demo (opciono) | `http://localhost:8110` |
+| UI | `http://localhost:8110` (`/health` vraća `{"status":"ok"}`) |
 | Baza (samo za vaš alat) | `127.0.0.1:3410` |
 | Konfiguracija | `.env` (iz `.env.example`), bez tajni u repozitorijumu |
+
+Ako ste `.env` napravili pre nego što je dodat frontend, obrišite ga da ga `up` ponovo napravi iz `.env.example`
+(potrebni su `UI_PORT` i `T10_API_BASE_URL`).
+
+### Frontend lokalno (hot reload)
+
+Potrebni su Node.js 24 i npm. Iz `src/frontend/`:
+
+```bash
+npm ci                      # prvi put i posle izmene package-lock.json
+npm run dev                 # http://localhost:8110 (T10_API_BASE_URL podrazumevano nije postavljen)
+npm run lint                # ESLint
+npm run typecheck           # tipovi ruta + TypeScript
+npm test                    # Vitest (isto što radi t10-tests-ui)
+npm run e2e                 # Playwright; prvi put: npx playwright install chromium
+npm run gen:api             # tipovi API klijenta iz OpenAPI-ja t10-api (kada backend radi na 8010)
+```
+
+Pravila frontenda: token i adresa API-ja postoje samo na serveru (`import "server-only"` u `src/lib/api` i
+`src/lib/auth`), poslovna logika je u `src/features/<modul>/`, a `src/app/` samo slaže stranice.
+Autorizaciju uvek donosi API; UI sakriva dugmad samo radi preglednosti.
 
 Migracije, seed/demo podaci i potrebne promenljive okruženja: <!-- opisati gde su i kako se pokreću (SEC-OPS-02, SEC-OPS-03) -->
 
@@ -72,4 +107,7 @@ Upisani su i u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
 
 ## Poznata ograničenja i residual risk
 
-<!-- Šta kontrola ne pokriva i zašto je rizik prihvatljiv ili otvoren. -->
+- `npm audit` prijavljuje ranjivost u paketu `braces` (preko `eslint-config-next` → `fast-glob`). Paket se koristi
+  samo za lint pri razvoju i ne ulazi u build aplikacije; ispravka koju nudi `npm audit` vraća Next.js na verziju 14.
+  Pratimo novu verziju `eslint-config-next`.
+- Content-Security-Policy još nije uključen; dolazi sa nonce-om u `proxy.ts`, zajedno sa autentikacijom.
