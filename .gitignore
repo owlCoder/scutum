@@ -21,6 +21,7 @@ secrets.json
 # Test artifacts
 TestResults/
 coverage/
+.scutum-test.override.yml
 
 # Node / TypeScript
 node_modules/

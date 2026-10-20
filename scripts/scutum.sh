@@ -118,11 +118,30 @@ cmd_test() {
     if [ -z "$suites" ]; then
       echo "::error::$id: profil 'tests' nema servis ${id}-tests ni ${id}-tests-<naziv>"; exit 1
     fi
-    trap 'docker compose --profile tests down --volumes --remove-orphans >/dev/null 2>&1 || true' EXIT
+
+    # Testovi rade u ZASEBNOM compose projektu (scutum-tNN-test), da ne diraju razvojni 'up' istog servisa:
+    #  - sopstveni kontejneri i volumeni (scutum-tNN-test_*), pa cleanup sa --volumes ne briše razvojnu bazu;
+    #  - bez objavljenih portova, pa nema sudara sa već pokrenutim api/bazom na 127.0.0.1;
+    #  - scutum-net je zamenjen privatnom mrežom projekta: aliasi (tNN-api, stubovi) rade unutar testa,
+    #    a test kontejneri se ne pojavljuju na zajedničkoj mreži drugih timova.
+    # Izolacija pretpostavlja da compose nema container_name ni ručno zadata imena volumena/mreža;
+    # to proverava scripts/ci/check-structure.sh.
+    local project="scutum-${id}-test" override=".scutum-test.override.yml" svc
+    {
+      echo "# Generiše scripts/scutum.sh test; ne menjati ručno."
+      echo "services:"
+      for svc in $(docker compose --profile '*' config --services); do
+        printf '  %s:\n    ports: !reset []\n' "$svc"
+      done
+      printf 'networks:\n  %s: !override\n    driver: bridge\n' "$NET"
+    } >"$override"
+    local dc=(docker compose -p "$project" -f docker-compose.yml -f "$override" --profile tests)
+    trap '"${dc[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true; rm -f "$override"' EXIT
+    "${dc[@]}" down --volumes --remove-orphans >/dev/null 2>&1 || true   # ostaci prekinutog prethodnog pokretanja
     local suite failed=""
     for suite in $suites; do
-      echo "==> test $id ($suite)"
-      docker compose --profile tests run --rm --build "$suite" || failed="$failed $suite"
+      echo "==> test $id ($suite) [projekat $project]"
+      "${dc[@]}" run --rm --build "$suite" || failed="$failed $suite"
     done
     if [ -n "$failed" ]; then
       echo "::error::$id: testovi nisu prošli:$failed"; exit 1
