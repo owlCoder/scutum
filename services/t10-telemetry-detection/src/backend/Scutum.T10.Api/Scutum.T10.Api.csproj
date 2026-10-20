@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <!-- Lozinka baze za lokalni rad ide u user-secrets, ne u appsettings (vidi README servisa). -->
+    <UserSecretsId>scutum-t10-api</UserSecretsId>
+  </PropertyGroup>
+  <!-- ASP.NET Core Web API: endpointi, autentikacija, greške (ProblemDetails), /health, OpenAPI. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <!-- Potreban za 'dotnet ef migrations add' (-s src/backend/Scutum.T10.Api); ne ulazi u objavljen build. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Scutum.T10.Services\Scutum.T10.Services.csproj" />
+  </ItemGroup>
+</Project>
