@@ -1,0 +1,79 @@
+# T11 — Organizacije i trust granice
+# Podrazumevani razvojni compose. Tim sme da ga menja (drugi jezik, druga baza),
+# ali zadržava konvencije iz README.md u korenu repoa: ime projekta, imena servisa,
+# portove (samo 127.0.0.1), mrežu scutum-net samo za api i profil 'tests'.
+name: scutum-t11
+
+services:
+  t11-api:
+    build:
+      context: .
+      target: runtime
+    environment:
+      DB_HOST: ${DB_HOST:?kopirajte .env.example u .env}
+      DB_PORT: ${DB_PORT:?kopirajte .env.example u .env}
+      DB_NAME: ${DB_NAME:?kopirajte .env.example u .env}
+      DB_USER: ${DB_USER:?kopirajte .env.example u .env}
+      DB_PASSWORD: ${DB_PASSWORD:?kopirajte .env.example u .env}
+      # T04_BASE_URL: ${T04_BASE_URL:-http://t04-api:8080}
+    ports:
+      - "127.0.0.1:${API_PORT:?kopirajte .env.example u .env}:8080"
+    depends_on:
+      t11-db:
+        condition: service_healthy
+    networks: [default, scutum-net]   # jedino api je vidljiv ostalim timovima
+
+  t11-db:
+    image: mysql:8.4
+    command: ["--performance-schema=OFF", "--innodb-buffer-pool-size=128M", "--max-connections=50"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?kopirajte .env.example u .env}
+      MYSQL_DATABASE: ${DB_NAME:?kopirajte .env.example u .env}
+      MYSQL_USER: ${DB_USER:?kopirajte .env.example u .env}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?kopirajte .env.example u .env}
+    ports:
+      - "127.0.0.1:${DB_PORT_HOST:?kopirajte .env.example u .env}:3306"   # samo za vaš alat (DBeaver, Workbench...)
+    volumes:
+      - db-data:/var/lib/mysql
+      # - ./db/init:/docker-entrypoint-initdb.d:ro   # opciono: šema/seed za praznu bazu
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+    networks: [default]               # baza NIJE na scutum-net: tuđi servisi je ne vide
+
+  t11-tests:
+    profiles: [tests]                 # pokreće se samo sa: --profile tests (CI i scutum.sh test)
+    build:
+      context: .
+      target: test
+    environment:
+      DB_HOST: ${DB_HOST:?kopirajte .env.example u .env}
+      DB_PORT: ${DB_PORT:?kopirajte .env.example u .env}
+      DB_NAME: ${DB_NAME:?kopirajte .env.example u .env}
+      DB_USER: ${DB_USER:?kopirajte .env.example u .env}
+      DB_PASSWORD: ${DB_PASSWORD:?kopirajte .env.example u .env}
+    volumes:
+      - ./TestResults:/results          # rezultate testova pišite u /results; CI ih uploaduje kao dokaz
+    depends_on:
+      t11-db:
+        condition: service_healthy
+    networks: [default]
+
+  # Opciono: stub servisa od kog zavisite (profil 'stubs'), npr. WireMock/Mockoon nad OpenAPI iz contracts/
+  # t11-stub-t04:
+  #   profiles: [stubs]
+  #   image: wiremock/wiremock:3.9.1
+  #   volumes: ["./stubs/t04:/home/wiremock"]
+  #   networks:
+  #     scutum-net: { aliases: [t04-api] }   # ne pokretati zajedno sa pravim t04 servisom
+
+networks:
+  scutum-net:
+    external: true
+    name: scutum-net
+
+volumes:
+  db-data:
