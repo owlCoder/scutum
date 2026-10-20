@@ -23,6 +23,17 @@ services:
         condition: service_healthy
     networks: [default, scutum-net]   # jedino api je vidljiv ostalim timovima
 
+  t10-ui:                             # Next.js frontend (BFF): sa API-jem razgovara samo server, preko privatne mreže
+    build:
+      context: ./src/frontend
+      target: runtime
+    environment:
+      T10_API_BASE_URL: ${T10_API_BASE_URL:?kopirajte .env.example u .env}
+    ports:
+      - "127.0.0.1:${UI_PORT:?kopirajte .env.example u .env}:3000"
+    depends_on: [t10-api]
+    networks: [default]               # UI nije na scutum-net: drugi timovi koriste API, ne UI
+
   t10-db:
     image: mysql:8.4
     command: ["--performance-schema=OFF", "--innodb-buffer-pool-size=128M", "--max-connections=50"]
@@ -44,22 +55,15 @@ services:
       start_period: 20s
     networks: [default]               # baza NIJE na scutum-net: tuđi servisi je ne vide
 
-  t10-tests:
+  # Testovi (profil 'tests'; pokreće ih scutum.sh test i CI). Backend testovi dolaze kao t10-tests-api
+  # zajedno sa .NET skeletonom; do tada placeholder API nema testove.
+  t10-tests-ui:
     profiles: [tests]                 # pokreće se samo sa: --profile tests (CI i scutum.sh test)
     build:
-      context: .
+      context: ./src/frontend
       target: test
-    environment:
-      DB_HOST: ${DB_HOST:?kopirajte .env.example u .env}
-      DB_PORT: ${DB_PORT:?kopirajte .env.example u .env}
-      DB_NAME: ${DB_NAME:?kopirajte .env.example u .env}
-      DB_USER: ${DB_USER:?kopirajte .env.example u .env}
-      DB_PASSWORD: ${DB_PASSWORD:?kopirajte .env.example u .env}
     volumes:
-      - ./TestResults:/results          # rezultate testova pišite u /results; CI ih uploaduje kao dokaz
-    depends_on:
-      t10-db:
-        condition: service_healthy
+      - ./TestResults:/results          # JUnit XML (frontend-junit.xml); CI ga uploaduje kao dokaz
     networks: [default]
 
   # Opciono: stub servisa od kog zavisite (profil 'stubs'), npr. WireMock/Mockoon nad OpenAPI iz contracts/
