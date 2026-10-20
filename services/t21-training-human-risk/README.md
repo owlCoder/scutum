@@ -18,6 +18,8 @@ Tim:   ·  Stack: nije odabran (specifikacija preporučuje .NET / C#; drugi stac
 
 ## Pokretanje
 
+Linux / WSL / Git Bash:
+
 ```bash
 bash scripts/scutum.sh network      # jednom po računaru
 bash scripts/scutum.sh up t21          # api + baza
@@ -25,6 +27,19 @@ curl http://localhost:8021/health  # očekivano: OK
 bash scripts/scutum.sh test t21        # isto što radi CI
 bash scripts/scutum.sh down t21        # dodajte --volumes da obrišete podatke baze
 ```
+
+Windows PowerShell / Command Prompt:
+
+```powershell
+scripts\scutum.bat network
+scripts\scutum.bat up t21
+curl http://localhost:8021/health
+scripts\scutum.bat test t21
+scripts\scutum.bat down t21
+```
+
+Preduslovi, izbor terminala i rešavanje problema opisani su u [README u korenu
+repozitorijuma](../../README.md#preduslovi-i-brzi-početak-prvi-put-na-računaru).
 
 | Šta | Gde |
 | --- | --- |

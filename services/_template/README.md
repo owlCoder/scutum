@@ -16,6 +16,8 @@ Tim: __TEAM__  ·  Stack: __STACK__
 
 ## Pokretanje
 
+Linux / WSL / Git Bash:
+
 ```bash
 bash scripts/scutum.sh network      # jednom po računaru
 bash scripts/scutum.sh up __ID_LC__          # api + baza
@@ -23,6 +25,19 @@ curl http://localhost:__API_PORT__/health  # očekivano: OK
 bash scripts/scutum.sh test __ID_LC__        # isto što radi CI
 bash scripts/scutum.sh down __ID_LC__        # dodajte --volumes da obrišete podatke baze
 ```
+
+Windows PowerShell / Command Prompt:
+
+```powershell
+scripts\scutum.bat network
+scripts\scutum.bat up __ID_LC__
+curl http://localhost:__API_PORT__/health
+scripts\scutum.bat test __ID_LC__
+scripts\scutum.bat down __ID_LC__
+```
+
+Preduslovi, izbor terminala i rešavanje problema opisani su u [README u korenu
+repozitorijuma](../../README.md#preduslovi-i-brzi-početak-prvi-put-na-računaru).
 
 | Šta | Gde |
 | --- | --- |

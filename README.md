@@ -106,9 +106,33 @@ Nedostaju li vam tema ili folder (npr. dodata je nova tema), napravite ga skript
 bash scripts/new-service.sh T13 moj-slug "Naziv teme" -c "R1-xx|Naziv celine" --team 5
 ```
 
-## Brzi početak (prvi put na računaru)
+Na Windows-u istu skriptu pokrenite iz PowerShell-a ili Command Prompt-a:
 
-Potrebno: Git, **Docker Desktop** (Compose v2) i Bash (na Windows-u **Git Bash** ili **WSL**).
+```powershell
+scripts\new-service.bat T13 moj-slug "Naziv teme" -c "R1-xx|Naziv celine" --team 5
+```
+
+## Preduslovi i brzi početak (prvi put na računaru)
+
+Rad na projektu zahteva sledeće:
+
+- **Git** za kloniranje repozitorijuma i rad sa granama;
+- **Docker Desktop** sa uključenim Docker Compose v2 i pokrenutim Docker engine-om;
+- na Windows-u **WSL 2** kao Docker Desktop backend (Docker Desktop ga koristi za Linux kontejnere);
+- Bash okruženje: Linux/WSL ili Git Bash. Windows korisnici ne moraju ručno da ulaze u WSL:
+  `scripts\scutum.bat` automatski koristi Git Bash, a zatim WSL ako Git Bash nije pronađen.
+
+Proverite instalaciju pre prvog pokretanja:
+
+```bash
+git --version
+docker --version
+docker compose version
+```
+
+Na Windows-u ove provere pokrenite u PowerShell-u; Git Bash ili WSL su potrebni samo
+ako želite da koristite `.sh` komande direktno. Docker Desktop mora biti pokrenut pre
+`network`, `up` ili `test` komande.
 
 ```bash
 git clone https://github.com/owlCoder/scutum.git && cd scutum
@@ -120,6 +144,24 @@ curl http://localhost:8010/health     # očekivano: OK
 bash scripts/scutum.sh test t10       # isto što radi CI (profil `tests`)
 bash scripts/scutum.sh down t10       # gasi; dodajte --volumes da obrišete i podatke baze
 ```
+
+Windows PowerShell / Command Prompt ekvivalent:
+
+```powershell
+git clone https://github.com/owlCoder/scutum.git
+cd scutum
+
+scripts\scutum.bat network
+scripts\scutum.bat list
+scripts\scutum.bat up t10
+curl http://localhost:8010/health
+scripts\scutum.bat test t10
+scripts\scutum.bat down t10
+```
+
+`.bat` wrapper prosleđuje iste argumente canonical Bash skripti, pa su ponašanje,
+Docker mreža, `.env` i portovi isti na svim sistemima. Nemojte pokretati isti servis
+istovremeno iz više terminala ili iz više WSL distribucija.
 
 Dok tim ne zameni placeholder, `up` podiže prazan servis koji odgovara `OK` na `/health` i pravu MySQL bazu.
 Time se odmah vidi da pokretanje sa čistog klona radi (SEC-OPS-01).
@@ -210,7 +252,10 @@ Svoj CI ipak pišete vi, unutar svog foldera, jer CI samo poziva vaš profil `te
    Izmena ugovora u `contracts/tNN/<C-IME-vN>/` pokreće testove owner-a i consumera navedenih u `contracts/REGISTRY.md`.
 4. `ci-ok` — zbirni rezultat; to je provera koju treba tražiti kao obaveznu pre merge-a. Pada i kada detekcija izmenjenih servisa ne uspe.
 
-Sve ovo možete pokrenuti lokalno: `bash scripts/ci/check-structure.sh`, `bash scripts/ci/check-secrets.sh`, `bash scripts/scutum.sh test <tNN>`.
+Sve ovo možete pokrenuti lokalno iz Linux/WSL/Git Bash okruženja:
+`bash scripts/ci/check-structure.sh`, `bash scripts/ci/check-secrets.sh`, `bash scripts/scutum.sh test <tNN>`.
+Windows wrapper pokriva Docker workflow (`scripts\scutum.bat test <tNN>`); CI pomoćne
+provere se pokreću kroz WSL ili Git Bash.
 Test kontejner ima montiran `TestResults/` servisa na `/results`; šta vaši testovi tamo upišu (npr. `.trx`, JUnit XML), CI čuva kao artefakt (dokaz za audit).
 
 ## UI i demo
@@ -240,6 +285,8 @@ Ako niste sigurni da vaš oblik demoa prolazi, pitajte nastavni tim. Autorizacij
 
 | Problem | Rešenje |
 | --- | --- |
+| Windows javlja da `scutum.bat` ne nalazi Bash/WSL | Instalirajte/omogućite WSL 2 i uključite ga kao Docker Desktop backend; zatim ponovo otvorite terminal. |
+| `Cannot connect to the Docker daemon` | Pokrenite Docker Desktop i sačekajte da engine bude spreman; proverite `docker compose version`. |
 | `network scutum-net declared as external, but could not be found` | `bash scripts/scutum.sh network` |
 | `port is already allocated` | Neko pokreće drugi servis na tom portu ili je lokalna aplikacija zauzela port; portovi se ne menjaju, ugasite uljeza (`docker ps`) |
 | Skripta pada na Windows-u sa `\r` greškama | Fajl je dobio CRLF završetke; `.gitattributes` to sprečava, a postojeći fajl popravite sa `git add --renormalize .` |
