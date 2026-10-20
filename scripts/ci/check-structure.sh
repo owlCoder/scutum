@@ -8,6 +8,38 @@ warn() { echo "::warning::$*"; }
 
 get() { sed -n "s/^$2:[[:space:]]*//p" "$1/service.yaml" | head -1 | sed 's/[[:space:]]*#.*$//; s/^"//; s/"[[:space:]]*$//'; }
 
+# Python 3 za compose_policy.py (na Windows-u 'python3' može biti samo prečica ka Microsoft Store-u).
+PY=""
+for c in python3 python; do
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(sys.version_info < (3, 7))' >/dev/null 2>&1; then
+    PY="$c"; break
+  fi
+done
+HAVE_COMPOSE=0
+docker compose version >/dev/null 2>&1 && HAVE_COMPOSE=1
+
+# Pravila mreže, portova i imena proveravaju se nad EFEKTIVNIM configom (kako ga compose stvarno tumači:
+# kratka i dugačka sintaksa, promenljive, svi profili), ne nad tekstom fajla. Ne zahteva pokrenut Docker daemon.
+check_compose() { # <dir> <tNN>
+  local dir="$1" tid="$2" json errf out line
+  if [ -z "$PY" ] || [ "$HAVE_COMPOSE" -ne 1 ]; then
+    err "$dir/docker-compose.yml: za proveru su potrebni 'docker compose' (v2.24+) i Python 3"; return
+  fi
+  errf="$(mktemp)"
+  if ! json="$(cd "$dir" && docker compose --env-file .env.example --profile '*' config --format json 2>"$errf")"; then
+    err "$dir/docker-compose.yml: 'docker compose config' nije uspeo: $(head -3 "$errf" | tr '\n' ' ')"
+    rm -f "$errf"; return
+  fi
+  rm -f "$errf"
+  out="$(printf '%s' "$json" | "$PY" scripts/ci/compose_policy.py "$tid" "$dir/docker-compose.yml")"
+  if [ $? -ne 0 ] && [ -z "$out" ]; then
+    err "$dir/docker-compose.yml: provera compose politike nije uspela"
+  fi
+  while IFS= read -r line; do
+    [ -n "$line" ] && err "$line"
+  done <<<"$out"
+}
+
 for f in README.md contracts/README.md contracts/REGISTRY.md; do
   [ -f "$f" ] || err "nedostaje $f"
 done
@@ -47,12 +79,8 @@ for dir in services/*/; do
       err "$dir/.env.example: DB_PORT mora postojati (port baze unutar kontejnera, npr. 3306 za MySQL ili 5432 za PostgreSQL)"
   fi
 
-  if [ -f "$dir/docker-compose.yml" ]; then
-    grep -q "^name: scutum-t$nn\$" "$dir/docker-compose.yml" || err "$dir/docker-compose.yml: očekujem 'name: scutum-t$nn'"
-    grep -q 'scutum-net' "$dir/docker-compose.yml"            || err "$dir/docker-compose.yml: api mora biti na mreži scutum-net"
-    if grep -Eq '^[[:space:]]*-[[:space:]]*"?[0-9]{2,5}:[0-9]+' "$dir/docker-compose.yml"; then
-      err "$dir/docker-compose.yml: portovi se objavljuju samo na 127.0.0.1 (npr. \"127.0.0.1:80$nn:8080\")"
-    fi
+  if [ -f "$dir/docker-compose.yml" ] && [ -f "$dir/.env.example" ]; then
+    check_compose "$dir" "t$nn"
   fi
   if git ls-files --error-unmatch "$dir/.env" >/dev/null 2>&1; then
     err "$dir/.env je commit-ovan — ukloniti (git rm --cached) i rotirati vrednosti"
