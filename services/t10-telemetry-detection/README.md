@@ -1,7 +1,7 @@
 # T10 — Log izvori, telemetry ingestion i detection tuning
 
-> **Status:** `active` — CI pokreće `tests` profil (trenutno `t10-tests-ui`) na svakom PR-u.
-> Backend (.NET 10 + PostgreSQL) je u izradi; do tada `t10-api` je placeholder koji odgovara na `/health`.
+> **Status:** `active` — CI pokreće `tests` profil (`t10-tests-api` i `t10-tests-ui`) na svakom PR-u.
+> Kostur je postavljen; funkcionalnosti celina se dodaju po Tapiz karticama.
 > Pravila strukture i konvencija: [README u korenu repozitorijuma](../../README.md).
 
 ## Odgovornost tima
@@ -12,17 +12,21 @@ Projektne celine:
 - **R2-17** — Security telemetry ingestion i normalizacija
 - **R3-15** — Detection engineering, simulacija i tuning pravila
 
-Tim: 1  ·  Stack: Next.js 16 (frontend); .NET 10 + PostgreSQL (backend, u izradi)
+Tim: 1  ·  Stack: .NET 10 + EF Core + PostgreSQL 17 (backend); Next.js 16 (frontend)
 
 ## Struktura
 
 ```text
+Scutum.T10.slnx          jedan .NET solution za backend i njegove testove
+global.json              .NET SDK 10.0.x
+Directory.*.props        zajednička podešavanja i verzije NuGet paketa
+dotnet-tools.json        lokalni alati (dotnet-ef): `dotnet tool restore`
 src/
-  backend/     .NET 10 rešenje (u izradi)
-  frontend/    Next.js aplikacija — samostalan npm projekat sa svojim Dockerfile-om i testovima
+  backend/               .NET 10 Web API — raspored i pravila: src/backend/README.md
+  frontend/              Next.js aplikacija — samostalan npm projekat sa svojim Dockerfile-om i testovima
 tests/
-  backend/     .NET test projekti (u izradi)
-docs/          threat model, demo scenario
+  backend/               .NET test projekti (UnitTests, IntegrationTests)
+docs/                    threat model, demo scenario
 ```
 
 Frontend testovi (Vitest, Playwright) su namerno u `src/frontend/`, a ne u `tests/`: alati traže `node_modules`
@@ -36,7 +40,7 @@ Linux / WSL / Git Bash:
 
 ```bash
 bash scripts/scutum.sh network      # jednom po računaru
-bash scripts/scutum.sh up t10          # api + baza
+bash scripts/scutum.sh up t10          # api + ui + baza (PostgreSQL)
 curl http://localhost:8010/health  # očekivano: OK
 bash scripts/scutum.sh test t10        # isto što radi CI
 bash scripts/scutum.sh down t10        # dodajte --volumes da obrišete podatke baze
@@ -64,6 +68,30 @@ repozitorijuma](../../README.md#preduslovi-i-brzi-početak-prvi-put-na-računaru
 
 Ako ste `.env` napravili pre nego što je dodat frontend, obrišite ga da ga `up` ponovo napravi iz `.env.example`
 (potrebni su `UI_PORT` i `T10_API_BASE_URL`).
+
+### Backend lokalno (hot reload)
+
+Potreban je .NET SDK 10. Baza radi u Docker-u, a API lokalno. Komande se kucaju iz `services/t10-telemetry-detection/`:
+
+```bash
+docker compose up -d t10-db                       # samo PostgreSQL na 127.0.0.1:3410
+dotnet tool restore                               # jednom: lokalni dotnet-ef
+dotnet user-secrets set "ConnectionStrings:T10" \
+  "Host=localhost;Port=3410;Database=t10_db;Username=t10_app;Password=dev-only-app-change-me" \
+  --project src/backend/Scutum.T10.Api           # jednom; lozinka ostaje van repoa
+dotnet watch --project src/backend/Scutum.T10.Api # http://localhost:8010 (/health, /openapi/v1.json)
+dotnet test Scutum.T10.slnx                       # svi backend testovi
+```
+
+Migracije (EF Core, u `src/backend/Scutum.T10.Data/Migrations/`):
+
+```bash
+dotnet ef migrations add <ImeMigracije> -p src/backend/Scutum.T10.Data -s src/backend/Scutum.T10.Api
+dotnet ef database update -p src/backend/Scutum.T10.Data -s src/backend/Scutum.T10.Api
+```
+
+Kada backend doda nove endpointe, tipovi za frontend se osvežavaju sa `npm run gen:api` iz `src/frontend/`
+(API mora da radi na 8010).
 
 ### Frontend lokalno (hot reload)
 
