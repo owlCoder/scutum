@@ -209,8 +209,9 @@ ali zajednička pravila (njih proverava CI) ostaju ista:
 | --- | --- |
 | Ime compose projekta `scutum-tNN`, servisi `tNN-api`, `tNN-db`, `tNN-tests` (ili više: `tNN-tests-<naziv>`) | Nema sudara naziva u zajedničkoj mreži |
 | Servis sluša na `8080`, `GET /health` vraća 200 | Isti način provere za sve jezike |
-| Samo `api` je na mreži `scutum-net`; baza ostaje privatna | Niko ne može da dohvati tuđu bazu (SEC-CONV-10) |
-| Portovi samo na `127.0.0.1`, po formuli iz tabele | Servisi na laptopu nisu izloženi mreži fakulteta |
+| Samo `api` (i stubovi `tNN-stub-*`) je na mreži `scutum-net`, koja mora biti `external`; baza ostaje privatna | Niko ne može da dohvati tuđu bazu (SEC-CONV-10) |
+| Portovi samo na `127.0.0.1`, po formuli iz tabele; važi za kratku i dugačku `ports` sintaksu | Servisi na laptopu nisu izloženi mreži fakulteta |
+| Bez `container_name`, `network_mode` i ručno zadatih imena volumena/mreža | `scutum.sh test` pravi izolovanu kopiju projekta; fiksna imena bi je vezala za razvojne podatke |
 | Profil `tests` pokreće sve testove i vraća exit kod ≠ 0 pri padu; više test servisa (npr. `t10-tests-api` i `t10-tests-ui`) se pokreće redom i pad bilo kog obara proveru | CI ne zna vaš jezik, samo poziva ovaj profil |
 | Port baze u kontejneru (`DB_PORT`) bira tim; host port je uvek `3400+NN` | Slobodan izbor baze bez sudara portova |
 | Konfiguracija kroz promenljive okruženja; `.env` se ne commituje | SEC-OPS-06, SEC-BASE-04 |
@@ -244,16 +245,26 @@ Breaking promena prihvaćenog ugovora zahteva novu verziju i review pogođenih t
 GitHub Actions čita workflow-e samo iz `.github/workflows/`, zato postoji **jedan globalni** [`ci.yml`](.github/workflows/ci.yml).
 Svoj CI ipak pišete vi, unutar svog foldera, jer CI samo poziva vaš profil `tests`:
 
-1. `structure` — proverava da svaki servis prati strukturu i konvencije iz ovog README-a.
+1. `structure` — proverava da svaki servis prati strukturu i konvencije iz ovog README-a. Pravila mreže, portova i imena
+   proveravaju se nad **efektivnim** configom (`docker compose config` sa `.env.example` i svim profilima), pa obuhvataju
+   i dugačku `ports` sintaksu i vrednosti iz promenljivih ([`compose_policy.py`](scripts/ci/compose_policy.py)).
 2. `secrets` — osnovna provera praćenih fajlova na `.env`, ključeve i tokene (ne zamenjuje namenske alate).
-3. `tests (tNN)` — za svaki **izmenjen servis sa `status: active`** pokreće sve `tNN-tests*` servise profila `tests` iz njegovog foldera.
+3. `selftest` — testovi zajedničkih skripti: negativni slučajevi compose politike i dokaz da `scutum.sh test` ne gasi
+   razvojni `up` niti briše njegovu bazu ([`scripts/ci/selftest/`](scripts/ci/selftest/)).
+4. `tests (tNN)` — za svaki **izmenjen servis sa `status: active`** pokreće sve `tNN-tests*` servise profila `tests` iz njegovog foldera.
    Servisi sa `status: scaffold` se preskaču (`structure` upozorava kada scaffold servis već ima kod u `src/` ili `tests/`).
    Ako menjate zajedničke fajlove (`scripts/`, `.github/workflows/`), proveravaju se svi aktivni servisi.
    Izmena ugovora u `contracts/tNN/<C-IME-vN>/` pokreće testove owner-a i consumera navedenih u `contracts/REGISTRY.md`.
-4. `ci-ok` — zbirni rezultat; to je provera koju treba tražiti kao obaveznu pre merge-a. Pada i kada detekcija izmenjenih servisa ne uspe.
+5. `ci-ok` — zbirni rezultat; to je provera koju treba tražiti kao obaveznu pre merge-a. Pada i kada detekcija izmenjenih servisa ne uspe.
+
+`scutum.sh test` pokreće testove u **zasebnom compose projektu** `scutum-tNN-test`: sa sopstvenim kontejnerima i volumenima,
+bez objavljenih portova i sa privatnom kopijom `scutum-net`. Zato može da radi dok je isti servis podignut sa `up`, a čišćenje
+posle testa (`down --volumes`) briše samo test resurse, nikad razvojnu bazu.
 
 Sve ovo možete pokrenuti lokalno iz Linux/WSL/Git Bash okruženja:
-`bash scripts/ci/check-structure.sh`, `bash scripts/ci/check-secrets.sh`, `bash scripts/scutum.sh test <tNN>`.
+`bash scripts/ci/check-structure.sh`, `bash scripts/ci/check-secrets.sh`, `bash scripts/scutum.sh test <tNN>`,
+`bash scripts/ci/selftest/check-structure.test.sh` i `bash scripts/ci/selftest/scutum-test-isolation.test.sh`.
+Za `check-structure.sh` su potrebni `docker compose` (v2.24+, daemon ne mora da radi) i Python 3.
 Windows wrapper pokriva Docker workflow (`scripts\scutum.bat test <tNN>`); CI pomoćne
 provere se pokreću kroz WSL ili Git Bash.
 Test kontejner ima montiran `TestResults/` servisa na `/results`; šta vaši testovi tamo upišu (npr. `.trx`, JUnit XML), CI čuva kao artefakt (dokaz za audit).
@@ -270,7 +281,7 @@ Ako niste sigurni da vaš oblik demoa prolazi, pitajte nastavni tim. Autorizacij
 - Nikada ne commitujte `.env`, ključeve, sertifikate ni tokene; koristite `.env.example` sa razvojnim vrednostima. Ako se tajna slučajno commituje,
   odmah obavestite nastavni tim; brisanje u sledećem commit-u nije dovoljno (CONTRIBUTING.md).
 - Ne pristupajte tuđoj bazi i ne menjajte tuđe tabele; tražite promenu preko ugovora i review-a tog tima.
-- Ne objavljujte portove na `0.0.0.0`; koristite `127.0.0.1:<port>:<port>` kao u šablonu.
+- Ne objavljujte portove na `0.0.0.0`; koristite `127.0.0.1:<port>:<port>` kao u šablonu (CI odbija sve ostalo, i u dugačkoj sintaksi).
 - Ne pišite sopstvenu kriptografiju, hash lozinki ni token algoritme.
 
 ## Ko sme šta da menja
