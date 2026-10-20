@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Entiteti, statusi i poslovna pravila. Bez zavisnosti od EF Core-a, ASP.NET-a i drugih projekata. -->
+</Project>

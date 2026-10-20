@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- EF Core + PostgreSQL: T10DbContext, konfiguracije entiteta, migracije, seed i klijenti ka drugim timovima. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="EFCore.NamingConventions" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Scutum.T10.Domain\Scutum.T10.Domain.csproj" />
+  </ItemGroup>
+</Project>

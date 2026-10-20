@@ -1,0 +1,9 @@
+# Za backend build (kontekst = koren servisa). Frontend ima svoj kontekst i svoj .dockerignore.
+**/bin/
+**/obj/
+**/node_modules/
+src/frontend/
+TestResults/
+.env
+.vs/
+**/*.user

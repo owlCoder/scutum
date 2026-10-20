@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/backend/Scutum.T10.Api/Scutum.T10.Api.csproj" />
+    <Project Path="src/backend/Scutum.T10.Data/Scutum.T10.Data.csproj" />
+    <Project Path="src/backend/Scutum.T10.Domain/Scutum.T10.Domain.csproj" />
+    <Project Path="src/backend/Scutum.T10.Services/Scutum.T10.Services.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/backend/Scutum.T10.IntegrationTests/Scutum.T10.IntegrationTests.csproj" />
+    <Project Path="tests/backend/Scutum.T10.UnitTests/Scutum.T10.UnitTests.csproj" />
+  </Folder>
+</Solution>

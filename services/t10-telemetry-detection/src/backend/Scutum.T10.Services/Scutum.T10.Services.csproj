@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Use-case servisi po celini, DTO-i, provera scope-a i dozvola, audit. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Scutum.T10.Domain\Scutum.T10.Domain.csproj" />
+    <ProjectReference Include="..\Scutum.T10.Data\Scutum.T10.Data.csproj" />
+  </ItemGroup>
+</Project>
