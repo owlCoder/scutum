@@ -12,7 +12,8 @@ namespace t12_tests
         public async Task HealthEndpoint_ReturnsOk()
         {
             using var client = new HttpClient();
-            var url = "http://localhost:8012/health";
+            var baseUrl = Environment.GetEnvironmentVariable("TEST_BASE_URL") ?? "http://localhost:8012";
+            var url = $"{baseUrl}/health";
             var response = await client.GetAsync(url);
             var content = await response.Content.ReadAsStringAsync();
 
@@ -24,7 +25,8 @@ namespace t12_tests
         public async Task HealthEndpoint_ReturnsNotFound()
         {
             using var client = new HttpClient();
-            var url = "http://localhost:8012/invalid";
+            var baseUrl = Environment.GetEnvironmentVariable("TEST_BASE_URL") ?? "http://localhost:8012";
+            var url = $"{baseUrl}/invalid";
             var response = await client.GetAsync(url);
 
             Assert.That(response.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.NotFound));

@@ -205,17 +205,17 @@ Zabeležite izbor u `service.yaml` (`stack`) i ADR-u ako odstupate od preporuke.
 Šablon sadrži **MySQL 8 i placeholder Dockerfile kao podrazumevane vrednosti, ne kao obavezu**. Možete da promenite bazu ili jezik,
 ali zajednička pravila (njih proverava CI) ostaju ista:
 
-| Pravilo | Zašto |
-| --- | --- |
-| Ime compose projekta `scutum-tNN`, servisi `tNN-api`, `tNN-db`, `tNN-tests` (ili više: `tNN-tests-<naziv>`) | Nema sudara naziva u zajedničkoj mreži |
-| Servis sluša na `8080`, `GET /health` vraća 200 | Isti način provere za sve jezike |
-| Samo `api` (i stubovi `tNN-stub-*`) je na mreži `scutum-net`, koja mora biti `external`; baza ostaje privatna | Niko ne može da dohvati tuđu bazu (SEC-CONV-10) |
-| Portovi samo na `127.0.0.1`, po formuli iz tabele; važi za kratku i dugačku `ports` sintaksu | Servisi na laptopu nisu izloženi mreži fakulteta |
-| Bez `container_name`, `network_mode` i ručno zadatih imena volumena/mreža | `scutum.sh test` pravi izolovanu kopiju projekta; fiksna imena bi je vezala za razvojne podatke |
-| Profil `tests` pokreće sve testove i vraća exit kod ≠ 0 pri padu; više test servisa (npr. `t10-tests-api` i `t10-tests-ui`) se pokreće redom i pad bilo kog obara proveru | CI ne zna vaš jezik, samo poziva ovaj profil |
-| Port baze u kontejneru (`DB_PORT`) bira tim; host port je uvek `3400+NN` | Slobodan izbor baze bez sudara portova |
-| Konfiguracija kroz promenljive okruženja; `.env` se ne commituje | SEC-OPS-06, SEC-BASE-04 |
-| Migracije formiraju šemu nad praznom bazom; seed pokazuje normalan i negativan scenario | SEC-OPS-02, SEC-OPS-03 |
+| Pravilo                                                                                                                                                                   | Zašto                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Ime compose projekta `scutum-tNN`, servisi `tNN-api`, `tNN-db`, `tNN-tests` (ili više: `tNN-tests-<naziv>`)                                                               | Nema sudara naziva u zajedničkoj mreži                                                          |
+| Servis sluša na `8080`, `GET /health` vraća 200                                                                                                                           | Isti način provere za sve jezike                                                                |
+| Samo `api` (i stubovi `tNN-stub-*`) je na mreži `scutum-net`, koja mora biti `external`; baza ostaje privatna                                                             | Niko ne može da dohvati tuđu bazu (SEC-CONV-10)                                                 |
+| Portovi samo na `127.0.0.1`, po formuli iz tabele; važi za kratku i dugačku `ports` sintaksu                                                                              | Servisi na laptopu nisu izloženi mreži fakulteta                                                |
+| Bez `container_name`, `network_mode` i ručno zadatih imena volumena/mreža                                                                                                 | `scutum.sh test` pravi izolovanu kopiju projekta; fiksna imena bi je vezala za razvojne podatke |
+| Profil `tests` pokreće sve testove i vraća exit kod ≠ 0 pri padu; više test servisa (npr. `t10-tests-api` i `t10-tests-ui`) se pokreće redom i pad bilo kog obara proveru | CI ne zna vaš jezik, samo poziva ovaj profil                                                    |
+| Port baze u kontejneru (`DB_PORT`) bira tim; host port je uvek `3400+NN`                                                                                                  | Slobodan izbor baze bez sudara portova                                                          |
+| Konfiguracija kroz promenljive okruženja; `.env` se ne commituje                                                                                                          | SEC-OPS-06, SEC-BASE-04                                                                         |
+| Migracije formiraju šemu nad praznom bazom; seed pokazuje normalan i negativan scenario                                                                                   | SEC-OPS-02, SEC-OPS-03                                                                          |
 
 ## Zavisnosti od drugih timova: solo i integrisani mod
 
