@@ -21,9 +21,10 @@ app.MapGet("/health", () => Results.Text("OK"))
    .WithName("GetHealth");
 
 // WeatherForecast endpoint
+
 var summaries = new[]
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    "Freezing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
 
 app.MapGet("/weatherforecast", () =>
