@@ -5,6 +5,8 @@
 > Pravila strukture i konvencija: [README u korenu repozitorijuma](../../README.md).
 
 ## Odgovornost tima
+> Servis trenutno implementira health endpoint (`/health`) koji vraća "OK" i ima NUnit testove (pozitivan i negativan). Status: active.
+
 
 Projektne celine:
 

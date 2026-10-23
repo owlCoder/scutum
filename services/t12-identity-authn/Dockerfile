@@ -1,13 +1,25 @@
-# PLACEHOLDER — zamenite ga Dockerfile-om vašeg servisa (npr. višefazni build za .NET / Node / Java / Python).
-# Konvencije koje treba zadržati:
-#   * stage 'runtime' = servis koji sluša na portu 8080 i odgovara na GET /health
-#   * stage 'test'    = pokreće sve testove i vraća exit kod != 0 kada neki padne (koristi ga profil 'tests')
-#     i rezultate (npr. .trx / JUnit XML) piše u /results — CI ih čuva kao dokaz (services/<tNN>-*/TestResults)
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet restore ./src/IdentityAuthnApi/IdentityAuthnApi.csproj
+RUN dotnet publish ./src/IdentityAuthnApi/IdentityAuthnApi.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore
 
-FROM busybox:1.36 AS test
-CMD ["sh", "-c", "echo 'SCAFFOLD: dodajte testove i zamenite ovaj stage' && exit 1"]
-
-FROM busybox:1.36 AS runtime
-RUN mkdir /www && echo OK > /www/health
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-CMD ["httpd", "-f", "-p", "8080", "-h", "/www"]
+COPY --from=build /app/publish .
+ENTRYPOINT ["dotnet", "IdentityAuthnApi.dll"]
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS test
+WORKDIR /src
+COPY . .
+RUN dotnet restore ./t12-tests/t12-tests.csproj
+RUN dotnet build ./t12-tests/t12-tests.csproj -c Release --no-restore
+ENTRYPOINT ["dotnet", "test", "./t12-tests/t12-tests.csproj", "-c", "Release", "--no-build", "--logger", "trx;LogFileName=t12-tests.trx", "--results-directory", "/results"]
