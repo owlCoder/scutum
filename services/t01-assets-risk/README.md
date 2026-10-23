@@ -1,7 +1,6 @@
 # T01 — Asset-i, ranjivosti i procena rizika
 
-> **Status:** `scaffold` (prazan šablon). Kada servis dobije `tests` profil koji prolazi, promenite
-> `status: active` u [`service.yaml`](service.yaml) — od tada ga CI testira na svakom PR-u.
+> **Status:** `active` — CI pokreće testove servisa (`tests` profil, NUnit) na svakom PR-u.
 > Pravila strukture i konvencija: [README u korenu repozitorijuma](../../README.md).
 
 ## Odgovornost tima
@@ -12,9 +11,22 @@ Projektne celine:
 - **R2-11** — Vulnerability registry i remediation
 - **R3-03** — Risk register i procena bezbednosnog rizika
 
-Tim:   ·  Stack: nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)
+Tim: 6  ·  Stack: .NET 8 / ASP.NET Core / MySQL 8.4 / NUnit
 
-<!-- Jednom rečenicom: šta ovaj servis radi i šta NE radi (granica odgovornosti). -->
+T01 vodi inventar asset-a sa kritičnošću i vlasnikom, registar ranjivosti sa remediation tokom
+i registar rizika; ne upravlja identitetima, domenima, dozvolama ni audit skladištem — to dobija
+od T12, T11, T02 i T04 preko ugovora.
+
+Struktura (Clean Architecture, zavisnosti samo ka unutra: Api → Infrastructure → Application → Domain):
+
+```
+Scutum.T01.sln
+src/Scutum.T01.Domain          entiteti, statusi, invarijante (ne zavisi ni od čega)
+src/Scutum.T01.Application     use-case-ovi i portovi
+src/Scutum.T01.Infrastructure  persistence, klijenti drugih timova
+src/Scutum.T01.Api             ASP.NET Core minimal API (/health)
+tests/Scutum.T01.Tests         NUnit testovi
+```
 
 ## Pokretanje
 
@@ -48,7 +60,15 @@ repozitorijuma](../../README.md#preduslovi-i-brzi-početak-prvi-put-na-računaru
 | Baza (samo za vaš alat) | `127.0.0.1:3401` |
 | Konfiguracija | `.env` (iz `.env.example`), bez tajni u repozitorijumu |
 
-Migracije, seed/demo podaci i potrebne promenljive okruženja: <!-- opisati gde su i kako se pokreću (SEC-OPS-02, SEC-OPS-03) -->
+Lokalno bez Docker-a (iz `services/t01-assets-risk/`, potreban .NET 8 SDK; `global.json` zaključava SDK na 8):
+
+```bash
+dotnet build
+dotnet test
+```
+
+Migracije, seed/demo podaci i potrebne promenljive okruženja: stižu u KT2 (SEC-OPS-02, SEC-OPS-03).
+Do tada servis ne koristi bazu; promenljive su u `.env.example`.
 
 ## Zavisnosti od drugih timova
 
