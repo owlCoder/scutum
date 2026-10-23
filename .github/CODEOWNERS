@@ -7,3 +7,5 @@
 #
 # Pravilo: tim menja samo svoj folder; promene zajedničkih fajlova (scripts/, .github/, contracts/REGISTRY.md,
 # README.md) idu kroz PR sa review-om bar jednog drugog tima.
+/services/t01-assets-risk/   @antsdz0r @dusankovacevicc @Vo1CE2 @ninko1337 @daniloferjuc @Stojane
+/contracts/t01/              @dusankovacevicc @Stojane
