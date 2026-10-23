@@ -1,13 +1,19 @@
-# PLACEHOLDER — zamenite ga Dockerfile-om vašeg servisa (npr. višefazni build za .NET / Node / Java / Python).
-# Konvencije koje treba zadržati:
-#   * stage 'runtime' = servis koji sluša na portu 8080 i odgovara na GET /health
-#   * stage 'test'    = pokreće sve testove i vraća exit kod != 0 kada neki padne (koristi ga profil 'tests')
-#     i rezultate (npr. .trx / JUnit XML) piše u /results — CI ih čuva kao dokaz (services/<tNN>-*/TestResults)
+ARG DOTNET_VERSION=10.0
 
-FROM busybox:1.36 AS test
-CMD ["sh", "-c", "echo 'SCAFFOLD: dodajte testove i zamenite ovaj stage' && exit 1"]
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS build
+WORKDIR /src
+COPY . .
+RUN dotnet publish src/T08.Api/T08.Api.csproj -c Release -o /app/publish
 
-FROM busybox:1.36 AS runtime
-RUN mkdir /www && echo OK > /www/health
+FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION} AS test
+WORKDIR /src
+COPY . .
+CMD ["dotnet", "test", "--logger", "trx;LogFileName=results.trx", "--results-directory", "/results"]
+
+FROM mcr.microsoft.com/dotnet/aspnet:${DOTNET_VERSION} AS runtime
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
-CMD ["httpd", "-f", "-p", "8080", "-h", "/www"]
+USER app
+ENTRYPOINT ["dotnet", "T08.Api.dll"]
