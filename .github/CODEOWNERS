@@ -7,3 +7,5 @@
 #
 # Pravilo: tim menja samo svoj folder; promene zajedničkih fajlova (scripts/, .github/, contracts/REGISTRY.md,
 # README.md) idu kroz PR sa review-om bar jednog drugog tima.
+
+/services/t08-attack-surface-supply-chain/   @RSvlad @Nebojsa17 @janja2004 @belanovpedja @CvijicIgor1 @eksercina

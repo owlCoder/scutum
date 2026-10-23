@@ -3,10 +3,10 @@ id: T08
 slug: attack-surface-supply-chain
 title: "Attack surface, supply chain i release trust"
 components: "R1-18, R2-13, R3-17"
-team: ""                 # broj vašeg tima
-stack: "nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)"
+team: "02"
+stack: ".NET / C# (.NET 10), ASP.NET Core, NUnit + Moq"
 # scaffold = prazan šablon, CI preskače testove; active = servis ima 'tests' profil i CI ga pokreće
-status: scaffold
+status: active
 # Portovi se NE menjaju (formula: api 8000+NN, ui 8100+NN, db 3400+NN)
 api_port: 8008
 ui_port: 8108
