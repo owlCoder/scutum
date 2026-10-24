@@ -66,13 +66,15 @@ security logiku drugog tima (SEC-DEP-01..05). Endpoint-i posle reči „Očekuje
 
 ## Ugovori koje ovaj servis nudi
 
-Upisani su i u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
+Nijedan ugovor T01 još nije objavljen u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
+Formalni DRAFT `C-ASSET-v1` (`contracts/t01/C-ASSET-v1/` + red u registru) stiže u posebnom PR-u.
+Do tada consumer timovi ovu tabelu ne tretiraju kao dogovoren ugovor.
 
-| Ugovor | Stanje | Consumeri |
+| Ugovor | Stanje | Planirani consumeri |
 | --- | --- | --- |
-| `C-ASSET-v1`: asset po ID-ju i pretraga po domenu/vlasniku | DRAFT (u izradi) | T03 (R1-06), T08 (R1-18, R2-13, R3-17), T11 (R1-14), T15 (R1-10, R2-20), T28 (R2-09), T30 (R2-16) |
-| `C-FINDING-v1`: nalazi iz R2-11 | planiran posle KT2 | T08 (R2-13, R3-17) |
-| `C-RISK-v1`: rizici iz R3-03 | planiran posle KT2 | T14 (R3-08), T26 (R3-23) |
+| `C-ASSET-v1`: asset po ID-ju i pretraga po domenu/vlasniku | planiran, nije objavljen (DRAFT u posebnom PR-u) | T03 (R1-06), T08 (R1-18, R2-13, R3-17), T11 (R1-14), T15 (R1-10, R2-20), T28 (R2-09), T30 (R2-16) |
+| `C-FINDING-v1`: nalazi iz R2-11 | planiran, nije objavljen (posle KT2) | T08 (R2-13, R3-17) |
+| `C-RISK-v1`: rizici iz R3-03 | planiran, nije objavljen (posle KT2) | T14 (R3-08), T26 (R3-23) |
 
 ## Trust granica i bezbednost
 
