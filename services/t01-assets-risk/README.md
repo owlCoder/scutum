@@ -72,17 +72,29 @@ Do tada servis ne koristi bazu; promenljive su u `.env.example`.
 
 ## Zavisnosti od drugih timova
 
+Dok upstream servis ne postoji, koristimo stub sa normalnim i failure odgovorom; stub ne sadrži
+security logiku drugog tima (SEC-DEP-01..05). Endpoint-i posle reči „Očekujemo“ su naš predlog minimalnog ugovora (DRAFT) dok upstream tim ne objavi svoj.
+
 | Servis / ugovor | Owner | Kako ga koristimo | Stub u razvoju |
 | --- | --- | --- | --- |
-| <!-- npr. C-AUDIT-v1 --> | <!-- T04 --> | <!-- env varijabla, endpoint --> | <!-- da / ne --> |
+| R1-01 domeni (`T11_BASE_URL`) | T11 | R1-02 registracija: domen mora postojati i biti aktivan. Očekujemo `GET /api/v1/domains/{id}` → `{id, organizationId, status: Active\|Inactive}`, 404 ako ne postoji | da |
+| R1-03 identiteti (`T12_BASE_URL`) | T12 | vlasnik asset-a (R1-02), remediation owner (R2-11), acceptedBy (R3-03). Očekujemo `GET /api/v1/identities/{id}` → `{id, status}`, 404 ako ne postoji | da |
+| R1-05 dozvole | T02 | dozvole subjekta u domenu (`asset.write`, `finding.close`, `risk.accept`…) iz claim-ova JWT-a ili `GET /api/v1/subjects/{id}/permissions?domainId=` | da (test JWT) |
+| R1-09 audit (`T04_BASE_URL`) | T04 | sve izmene u T01 šalju audit događaj sa poljima iz SEC-CONV-04. Očekujemo `POST /api/v1/events` | da (`InMemoryAuditSink`) |
+| R1-16 katalog kontrola (`T05_BASE_URL`) | T05 | R3-03 povezivanje kontrole sa rizikom. Očekujemo `GET /api/v1/controls/{id}` → `{id, name, status}` | da |
+| R1-12 simulatori | nema vlasnika, pravi T01 | R2-11 uvoz simuliranih nalaza iz `sim/findings.json` | sopstveni simulator |
 
 ## Ugovori koje ovaj servis nudi
 
-Upisani su i u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
+Nijedan ugovor T01 još nije objavljen u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
+Formalni DRAFT `C-ASSET-v1` (`contracts/t01/C-ASSET-v1/` + red u registru) stiže u posebnom PR-u.
+Do tada consumer timovi ovu tabelu ne tretiraju kao dogovoren ugovor.
 
-| Ugovor | Stanje | Consumeri |
+| Ugovor | Stanje | Planirani consumeri |
 | --- | --- | --- |
-| <!-- npr. C-TELEMETRY-v1 --> | <!-- DRAFT --> | <!-- T07, T04 --> |
+| `C-ASSET-v1`: asset po ID-ju i pretraga po domenu/vlasniku | planiran, nije objavljen (DRAFT u posebnom PR-u) | T03 (R1-06), T08 (R1-18, R2-13, R3-17), T11 (R1-14), T15 (R1-10, R2-20), T28 (R2-09), T30 (R2-16) |
+| `C-FINDING-v1`: nalazi iz R2-11 | planiran, nije objavljen (posle KT2) | T08 (R2-13, R3-17) |
+| `C-RISK-v1`: rizici iz R3-03 | planiran, nije objavljen (posle KT2) | T14 (R3-08), T26 (R3-23) |
 
 ## Trust granica i bezbednost
 
