@@ -7,3 +7,6 @@
 #
 # Pravilo: tim menja samo svoj folder; promene zajedničkih fajlova (scripts/, .github/, contracts/REGISTRY.md,
 # README.md) idu kroz PR sa review-om bar jednog drugog tima.
+# Dodeljivanje vlasništva za Tim 1
+/services/t10-telemetry-detection/ @nole78 @milanPR15
+/contracts/t10/ @nole78 @milanPR15
