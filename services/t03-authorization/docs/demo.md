@@ -1,16 +1,18 @@
-# Demo scenario: T03 — Object-level i API autorizacija i policy engine
+# T03 KT1 demo
 
-Demo može biti web UI, konzolna aplikacija, Swagger/HTTP kolekcija ili skripta — bitno je da je **ponovljiv
-po dokumentovanom postupku** i da prikazuje i normalan i negativni tok (specifikacija, pogl. 11.1).
+Iz `services/t03-authorization/` pokrenuti:
 
-## Priprema
+```sh
+dotnet run --project src/Scutum.T03.ConsoleUi --configuration Release
+dotnet test Scutum.T03.sln --configuration Release
+```
 
-<!-- komande za pokretanje, seed podaci, test identiteti -->
+1. Seed: Ana i Marko u dom-a, res-001 pripada Ani. Oboje imaju ReadOwn.
+2. Ana čita res-001: Granted, sadržaj je vraćen.
+3. Marko zna isti ID: Denied, RESOURCE_UNAVAILABLE, Resource=null.
+4. Demo ispisuje `DEMO PASS: 2/2 očekivana ishoda.`
+5. NUnit dodatno proverava scope, pogrešan scope granta, neaktivnost, unavailable
+   portove i jednakost kompletnog javnog odgovora za nepostojeći i tuđi resurs.
+6. Audit razlozi se proveravaju u testovima; nisu deo javnog odgovora.
 
-## Normalan scenario
-
-1. <!-- korak i očekivani rezultat -->
-
-## Negativni / abuse scenario
-
-1. <!-- npr. pristup tuđem resursu -> očekivani odgovor i audit/security događaj -->
+Ovaj demo ne demonstrira Update, ChangeOwner, HTTP autorizaciju niti R3 engine.

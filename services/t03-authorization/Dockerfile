@@ -1,12 +1,11 @@
-# PLACEHOLDER — zamenite ga Dockerfile-om vašeg servisa (npr. višefazni build za .NET / Node / Java / Python).
-# Konvencije koje treba zadržati:
-#   * stage 'runtime' = servis koji sluša na portu 8080 i odgovara na GET /health
-#   * stage 'test'    = pokreće sve testove i vraća exit kod != 0 kada neki padne (koristi ga profil 'tests')
-#     i rezultate (npr. .trx / JUnit XML) piše u /results — CI ih čuva kao dokaz (services/<tNN>-*/TestResults)
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS test
+WORKDIR /app
+COPY . .
+RUN dotnet restore Scutum.T03.sln && dotnet build Scutum.T03.sln --no-restore --configuration Release
+CMD ["sh", "-c", "dotnet test Scutum.T03.sln --no-build --configuration Release --logger 'trx;LogFileName=security.trx' --results-directory /results && dotnet run --project src/Scutum.T03.ConsoleUi --configuration Release --no-build"]
 
-FROM busybox:1.36 AS test
-CMD ["sh", "-c", "echo 'SCAFFOLD: dodajte testove i zamenite ovaj stage' && exit 1"]
-
+# Zadržan infrastrukturni health scaffold iz PR2; nije authorization API.
+# Izvršiva KT1 autorizacija je ConsoleUi + application handler, pokrenuta u test stage-u.
 FROM busybox:1.36 AS runtime
 RUN mkdir /www && echo OK > /www/health
 EXPOSE 8080
