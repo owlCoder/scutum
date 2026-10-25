@@ -11,6 +11,18 @@
 6. Odgovorite na review komentare; merge radi ovlašćeni član nakon odobrenja i
    uspešnog CI-ja.
 
+## Lokalno okruženje
+
+Pre rada svaki član mora imati Git, Docker Desktop sa Docker Compose v2 i
+pokrenut Docker engine. Windows korisnici treba da imaju uključen WSL 2
+backend u Docker Desktop-u. Komande mogu pokretati iz PowerShell-a ili
+Command Prompt-a preko `scripts\scutum.bat`; nije potrebno ručno pokretati
+WSL. Linux, WSL i Git Bash koriste `bash scripts/scutum.sh`.
+
+Pre slanja prvog PR-a proverite da `git --version`, `docker --version` i
+`docker compose version` vraćaju verzije, pa pokrenite servis i njegove
+testove prema [README u korenu repozitorijuma](README.md#preduslovi-i-brzi-početak-prvi-put-na-računaru).
+
 ## Bezbednosni zahtevi za svaki tim
 
 Za dodeljenu celinu dokumentujte:

@@ -1,0 +1,13 @@
+# Metapodaci servisa. Čita ih CI i skripte (zato ostaje ravan "ključ: vrednost" format).
+id: T04
+slug: audit-detection
+title: "Audit, detekcija i korelacija događaja"
+components: "R1-09, R2-07, R3-05"
+team: ""                 # broj vašeg tima
+stack: "nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)"
+# scaffold = prazan šablon, CI preskače testove; active = servis ima 'tests' profil i CI ga pokreće
+status: scaffold
+# Portovi se NE menjaju (formula: api 8000+NN, ui 8100+NN, db 3400+NN)
+api_port: 8004
+ui_port: 8104
+db_port: 3404

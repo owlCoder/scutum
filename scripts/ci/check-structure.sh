@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Proverava da svaki folder u services/ prati dogovorenu strukturu i konvencije (README.md u korenu repoa).
+set -uo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/../.."
+fail=0
+err()  { echo "::error::$*"; fail=1; }
+warn() { echo "::warning::$*"; }
+
+get() { sed -n "s/^$2:[[:space:]]*//p" "$1/service.yaml" | head -1 | sed 's/[[:space:]]*#.*$//; s/^"//; s/"[[:space:]]*$//'; }
+
+# Python 3 za compose_policy.py (na Windows-u 'python3' može biti samo prečica ka Microsoft Store-u).
+PY=""
+for c in python3 python; do
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(sys.version_info < (3, 7))' >/dev/null 2>&1; then
+    PY="$c"; break
+  fi
+done
+HAVE_COMPOSE=0
+docker compose version >/dev/null 2>&1 && HAVE_COMPOSE=1
+
+# Pravila mreže, portova i imena proveravaju se nad EFEKTIVNIM configom (kako ga compose stvarno tumači:
+# kratka i dugačka sintaksa, promenljive, svi profili), ne nad tekstom fajla. Ne zahteva pokrenut Docker daemon.
+check_compose() { # <dir> <tNN>
+  local dir="$1" tid="$2" json errf out line
+  if [ -z "$PY" ] || [ "$HAVE_COMPOSE" -ne 1 ]; then
+    err "$dir/docker-compose.yml: za proveru su potrebni 'docker compose' (v2.24+) i Python 3"; return
+  fi
+  errf="$(mktemp)"
+  if ! json="$(cd "$dir" && docker compose --env-file .env.example --profile '*' config --format json 2>"$errf")"; then
+    err "$dir/docker-compose.yml: 'docker compose config' nije uspeo: $(head -3 "$errf" | tr '\n' ' ')"
+    rm -f "$errf"; return
+  fi
+  rm -f "$errf"
+  out="$(printf '%s' "$json" | "$PY" scripts/ci/compose_policy.py "$tid" "$dir/docker-compose.yml")"
+  if [ $? -ne 0 ] && [ -z "$out" ]; then
+    err "$dir/docker-compose.yml: provera compose politike nije uspela"
+  fi
+  while IFS= read -r line; do
+    [ -n "$line" ] && err "$line"
+  done <<<"$out"
+}
+
+for f in README.md contracts/README.md contracts/REGISTRY.md; do
+  [ -f "$f" ] || err "nedostaje $f"
+done
+
+prefixes=""
+for dir in services/*/; do
+  dir="${dir%/}"; name="$(basename "$dir")"
+  case "$name" in _*) continue ;; esac
+  if ! [[ "$name" =~ ^t([0-9]{2})-[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+    err "$dir: ime foldera mora biti oblika tNN-slug (npr. t10-telemetry-detection)"; continue
+  fi
+  nn="${BASH_REMATCH[1]}"; n=$((10#$nn)); prefixes="$prefixes t$nn"
+
+  for f in README.md service.yaml docker-compose.yml .env.example; do
+    [ -f "$dir/$f" ] || err "$dir: nedostaje $f"
+  done
+  for d in src tests docs; do
+    [ -d "$dir/$d" ] || err "$dir: nedostaje folder $d/"
+  done
+  [ -f "$dir/service.yaml" ] || continue
+
+  [ "$(get "$dir" id | tr 'T' 't')" = "t$nn" ] || err "$dir/service.yaml: id mora biti T$nn"
+  [ "$(get "$dir" api_port)" = "$((8000 + n))" ] || err "$dir/service.yaml: api_port mora biti $((8000 + n))"
+  [ "$(get "$dir" ui_port)"  = "$((8100 + n))" ] || err "$dir/service.yaml: ui_port mora biti $((8100 + n))"
+  [ "$(get "$dir" db_port)"  = "$((3400 + n))" ] || err "$dir/service.yaml: db_port mora biti $((3400 + n))"
+  st="$(get "$dir" status)"
+  case "$st" in scaffold|active) ;; *) err "$dir/service.yaml: status mora biti 'scaffold' ili 'active'" ;; esac
+
+  if [ -f "$dir/.env.example" ]; then
+    grep -q "^API_PORT=$((8000 + n))$" "$dir/.env.example" ||
+      err "$dir/.env.example: API_PORT mora biti $((8000 + n))"
+    grep -q "^DB_PORT_HOST=$((3400 + n))$" "$dir/.env.example" ||
+      err "$dir/.env.example: DB_PORT_HOST mora biti $((3400 + n))"
+    grep -q "^DB_HOST=t$nn-db$" "$dir/.env.example" ||
+      err "$dir/.env.example: DB_HOST mora biti t$nn-db"
+    grep -Eq '^DB_PORT=[0-9]{2,5}$' "$dir/.env.example" ||
+      err "$dir/.env.example: DB_PORT mora postojati (port baze unutar kontejnera, npr. 3306 za MySQL ili 5432 za PostgreSQL)"
+  fi
+
+  if [ -f "$dir/docker-compose.yml" ] && [ -f "$dir/.env.example" ]; then
+    check_compose "$dir" "t$nn"
+  fi
+  if git ls-files --error-unmatch "$dir/.env" >/dev/null 2>&1; then
+    err "$dir/.env je commit-ovan — ukloniti (git rm --cached) i rotirati vrednosti"
+  fi
+  if [ "$st" = "scaffold" ] && [ -n "$(git ls-files -- "$dir/src" "$dir/tests" | grep -v '/\.gitkeep$')" ]; then
+    warn "$dir: src/ ili tests/ sadrže kod, a status je 'scaffold' — CI ne pokreće testove ovog servisa"
+  fi
+  if [ "$st" = "active" ]; then
+    [ -f "$dir/docs/threat-model.md" ] || warn "$dir: aktivan servis nema docs/threat-model.md (obavezno po specifikaciji, 5.3)"
+    [ -f "$dir/docs/demo.md" ]         || warn "$dir: aktivan servis nema docs/demo.md (normalni i negativni demo scenario, 11.1)"
+  fi
+done
+
+dups="$(printf '%s\n' $prefixes | sort | uniq -d)"
+[ -z "$dups" ] || err "više foldera za istu temu: $dups"
+
+[ "$fail" -eq 0 ] && echo "Struktura repozitorijuma je u redu."
+exit "$fail"

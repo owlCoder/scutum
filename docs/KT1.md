@@ -20,13 +20,26 @@ Izvor za nazive: SCUTUM specifikacija, str. 31, 56 i 70. Acceptance kriterijumi 
 
 ### R1-06
 
-| Task | Obavezni use-case | Konkretan acceptance kriterijum | Dokaz u kodu |
+**Realizovano u ovom KT1 paketu:** samo aplikaciona operacija `Read`, lokalni audit,
+DRAFT portovi/stubovi i testovi navedeni ispod. `Update` i `ChangeOwner` imaju samo
+domenske grane u `ResourceAccessPolicy`; nemaju handlere, write/CAS skladište niti
+izvršiv tok prenosa. Njihova realizacija je planirana za KT2. Prihvatljivost ovog
+KT1 obuhvata treba potvrditi sa asistentom pre merge-a; konačni R1-06 scope se ne smanjuje.
+
+Putanje su relativne na `services/t03-authorization/`.
+
+| Task | Obavezni use-case | Stanje i acceptance | Stvarni dokaz u kodu |
 | --- | --- | --- | --- |
-| T03-006 | provera vlasništva | OwnerId resursa poredi se sa pouzdanim Subject.Id; vlasnik bez dozvole se odbija | ResourceAccessPolicy; OwnerReadsOwnResource, OwnerWithoutPermissionIsDenied |
-| T03-007 | provera scope-a | Subject.ScopeId, scope asset-a i scope efektivne dozvole moraju biti usaglašeni | OtherScopeCannotReadEvenWithReadAny; GrantForWrongScopeDoesNotAuthorizeOwner |
-| T03-008 | dozvola/odbijanje konkretne operacije | Read, Update i ChangeOwner imaju zasebna pravila; read:any ne daje write | ResourceHandlers; ReadAnyDoesNotAllowWrite |
-| T03-009 | promena owner-a | Aktuelni owner sa eksplicitnom dozvolom prenosi resurs aktivnom korisniku istog scope-a; promena i audit su atomski | TransferImmediatelyChangesWhoCanRead; InvalidTargetOwnerDoesNotChangeState |
-| T03-010 | negativni pristup tuđem resursu | Poznat ID tuđeg resursa ne vraća sadržaj ni owner podatke; isti javni odgovor kao nepostojeći resurs | OtherOwnerCannotReadByKnownId; MissingAndForeignResourceHaveSamePublicResponse |
+| T03-006 | provera vlasništva | Read: owner mora imati dozvolu | `ResourceAccessPolicy`; `OwnerReadsOwnResource`, `OwnerWithoutPermissionIsDenied` |
+| T03-007 | provera scope-a | Subjekt, asset i grant moraju biti usaglašeni | `Read_WhenSubjectScopeDiffers_DeniesEvenWithGrantForTargetScope`, `Read_WhenGrantIsForAnotherScope_DeniesOwner` |
+| T03-008 | dozvola/odbijanje konkretne operacije | Read realizovan; Update/ChangeOwner tokovi planirani za KT2 | `ResourceHandlers.Read`; `Read_WhenReadAnyMatchesScope_AllowsNonOwner`; nema dokaza izvršivog write toka |
+| T03-009 | promena owner-a | PLAN KT2: aktivan owner sa dozvolom prenosi aktivnom subjektu istog scope-a; atomska promena i audit | Nije implementirano niti testirano; `ISubjectDirectory` je DRAFT |
+| T03-010 | negativni pristup tuđem resursu | Bez sadržaja i owner podataka; isti javni odgovor kao za nepostojeći resurs | `OtherOwnerCannotReadByKnownId`, `Read_WhenResourceIsMissingOrForeign_ReturnsIdenticalPublicResponse` |
+
+Dodatni negativni testovi: `Read_WhenAssetIsInactive_Denies`,
+`Read_WhenSubjectIsInactive_DeniesDespiteExistingPermission`,
+`Read_WhenDependencyIsUnavailable_FailsClosed` (posebno permissions i assets).
+Test source postoji; status novog izvršavanja je u `services/t03-authorization/docs/VALIDACIJA.md`.
 
 ### R2-12
 
@@ -54,7 +67,7 @@ Deny-overrides je predloženo pravilo konflikta za budući R3-01: bilo koji rele
 
 ## 3. Redosled implementacije i Tapiz backlog
 
-`backlog/TAPIZ.csv` je pripremljen za prepis/uvoz kartica: TaskId, Celina, naziv, Acceptance, Preduslovi, Milestone, Prioritet, Owner i Status. Statusi razlikuju pripremljen kod, čekanje provere, plan i review. Nije evidentirana objava na stvarnom Tapiz board-u.
+Tabele u ovom dokumentu predstavljaju plan backlog-a za unos u Tapiz. Fajl `backlog/TAPIZ.csv` nije deo paketa; objava kartica i njihovi stvarni statusi nisu potvrđeni.
 
 | Redosled | Posao | Zašto prethodi sledećem |
 | --- | --- | --- |
@@ -74,8 +87,8 @@ Deny-overrides je predloženo pravilo konflikta za budući R3-01: bilo koji rele
 | Subject | Id, ScopeId, IsAuthenticated, IsActive, Assurance | R1-03 / pouzdan identity adapter | Aktivan/neaktivan; potvrđena/nepotvrđena sesija |
 | ScopedPermission | Permission, ScopeId | R1-05 | Aktuelni snapshot; dozvola nije globalna |
 | AssetSnapshot | Id, ScopeId, IsActive | R1-02 | Aktivan/neaktivan; autoritativni scope |
-| ProtectedResource | Id, AssetId, OwnerId, Content, Version, Status | T03 / R1-06 | Active/Archived; izmene samo uz expected version |
-| ResourceOwner | Veza ProtectedResource.OwnerId -> Subject.Id | T03 / R1-06 | Promena zahteva dozvolu, vlasništvo i validnog novog owner-a |
+| ProtectedResource | Id, AssetId, OwnerId, Content, Version, Status | T03 / R1-06 | Active/Archived; Version je podatak; expected-version upis je PLAN KT2 |
+| ResourceOwner | Veza ProtectedResource.OwnerId -> Subject.Id | T03 / R1-06 | PLAN KT2: promena zahteva dozvolu, vlasništvo i validnog novog owner-a |
 | AccessDecision | Allowed, Code, Reason | T03 / R1-06 | Čista odluka; nema implicitnog allow |
 | OperationResult | Outcome, Code, Message, Resource? | T03 / Application | Deny i nepostojeći resurs imaju isti javni DTO |
 | SecurityEvent | Actor, Action, Target, Outcome, Time, Correlation, Sensitivity, PolicyVersion | T03; kasnije consumer R1-09 | Append-only kroz javni interfejs simulatora; interni razlog nije klijentski odgovor |
@@ -102,11 +115,11 @@ flowchart TD
   A --> E
 ```
 
-Tok promene vlasništva: pouzdan Subject -> validacija komande -> efektivne dozvole -> resurs i asset -> provera ownership/scope/action -> provera novog owner-a -> compare-and-swap promena + audit -> kontrolisan DTO. Klijent ne menja upstream tabele niti šalje sopstvene permissions.
+**Planirani tok promene vlasništva (KT2, nije implementiran):** pouzdan Subject -> validacija komande -> efektivne dozvole -> resurs i asset -> provera ownership/scope/action -> provera novog owner-a -> compare-and-swap promena + audit -> kontrolisan DTO. Klijent ne menja upstream tabele niti šalje sopstvene permissions.
 
 ## 5. Minimalna security matrica
 
-Ovo su projektne odluke T03, zasnovane na vežbi 1 (dozvola i scope) i vežbi 2 (konkretan resurs). Poznavanje ID-a nikada nije dovoljan osnov.
+Ovo je projektovana security matrica: redovi za Read imaju implementaciju; svi redovi za Update/ChangeOwner i njihove preduslove su PLAN KT2, a ne dokaz izvršenja. Odluke su zasnovane na vežbi 1 (dozvola i scope) i vežbi 2 (konkretan resurs). Poznavanje ID-a nikada nije dovoljan osnov.
 
 | Subject | Action | Resource | Allow/Deny | Obrazloženje |
 | --- | --- | --- | --- | --- |
@@ -138,19 +151,28 @@ Za R2-12/R3-01 planirane odluke: nepoznata endpoint/policy klasa -> deny; prekor
 | T03 R1-06 | T03 R3-01; API policy i drugi ovlašćeni consumer-i | AccessDecision + application handler | Interna granica; verzija r1-06:v1 |
 | T03 audit emitter | Tim koji poseduje R1-09 | SecurityEvent v1 | DRAFT; lokalni audit je implementiran |
 
-Tačni brojevi upstream timova i imena odgovornih osoba nisu u priloženoj dodeli T03. Owner-i su zato navedeni po celini; stvarni identiteti moraju se potvrditi na koordinaciji. Nije označeno da je dogovor već ACCEPTED.
+Dostavljena koordinaciona mapa navodi T12 za Identity/Auth, T02 za RBAC i T04 za audit. Imena odgovornih osoba i konkretne revizije ugovora potvrđuju se na koordinaciji. U KT2 ugovori ostaju DRAFT, KT3 zahteva izvršiv contract test, KT4 ACCEPTED verziju po kriterijumima. Nijedan dogovor ovde nije označen kao ACCEPTED.
 
 ## 7. Repozitorijum, build, CI i praksa rada
 
-Solution ima pet projekata i radi po istom smeru zavisnosti kao primeri iz vežbi. README daje clean-start komande. `.github/workflows/ci.yml` definiše restore, build, NUnit, malu statičku proveru i demo. `.github/pull_request_template.md` zahteva task, security acceptance, dokaz i review.
+T03 solution sa pet projekata nalazi se u `services/t03-authorization/`.
+Zajednička struktura i globalni `.github/workflows/ci.yml` preuzeti su iz PR-a #2;
+workflow nije zamenjen T03 workflow-om. `status: active` uključuje T03 u detekciju promena.
+Globalni CI poziva `scripts/scutum.sh test t03`, koji izvršava Docker `tests` profil:
+restore/build/NUnit/demo i odvojenu Python statičku proveru. TRX izlazi u `TestResults/`.
 
-Predložen tok: Tapiz T03-006 -> `feature/T03-006-object-authorization` -> commit sa TaskId -> PR -> CI + review -> VERIFY/SECURITY QA -> DONE. Direktan push na main se ne koristi. Paket ne sadrži izmišljene remote PR brojeve ili reviewer-e.
+Tok rada ostaje Tapiz task -> feature branch -> PR -> CI + review -> SECURITY QA -> DONE.
+Prema dostavljenom komentaru asistenta, prethodni PR je prošao build i tri postojeća
+NUnit testa. To je dokaz stare revizije, ne rezultat novih testova. Novo stanje
+provere je u `services/t03-authorization/docs/VALIDACIJA.md`.
 
-**Stanje:** struktura, source i CI konfiguracija su pripremljeni; statička provera i C# sintaksno parsiranje prolaze. Lokalna Git istorija početnog scaffold-a i feature grane je priložena kao bundle. Build i NUnit rezultat treba pribaviti na .NET 8 računaru ili kroz pripremljeni CI jer CoreCLR ne radi u ovom okruženju. Tačka koja zahteva dokaz uspešnog build-a još nije dokazana.
+Integraciona osnova je lokalno rekonstruisan PR #2 (11 patch-eva, poslednji izvorni
+commit zabeležen u `docs/T03-REVIEW-FIXES.md`). Pre merge-a usaglasiti redosled sa
+autorom PR-a #2 i ponoviti CI na konačnoj zajedničkoj grani.
 
 ## 8. Prvo izvršivo pravilo i plan KT2
 
-Pravilo u `ResourceAccessPolicy`: aktivan vlasnik mora imati odgovarajuću dozvolu u scope-u asset-a; isti ID ili ista uloga bez vlasništva ne daju pristup. NUnit `OtherOwnerCannotReadByKnownId` poziva aplikacioni handler bez UI-ja i očekuje Denied sa Resource=null. Kod i test su napisani; izvršavanje još nije potvrđeno.
+Pravilo u `ResourceAccessPolicy`: aktivan vlasnik mora imati odgovarajuću dozvolu u scope-u asset-a; isti ID ili ista uloga bez vlasništva ne daju pristup. NUnit `OtherOwnerCannotReadByKnownId` poziva aplikacioni handler bez UI-ja i očekuje Denied sa Resource=null. Prethodni CI prolaz ovog testa potvrđen je dostavljenim review komentarom; novu reviziju proveriti prema VALIDACIJA.md.
 
 Plan KT2: čitanje -> izmena -> prenos owner-a -> stari owner deny / novi owner allow; seed; strukturisani audit; threat model za sve tri celine; pozitivan i negativan stub ugovor; pregled sa upstream timom; stvarni build/test dokaz.
 
