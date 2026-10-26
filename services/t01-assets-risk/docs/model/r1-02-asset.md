@@ -1,44 +1,46 @@
 # R1-02 — Asset model i životni ciklus
 
-## Namena i obim
+## Namena
 
 Asset predstavlja informacioni resurs: aplikaciju, servis, uređaj,
 podatke ili drugi resurs.
 
-Izvor zahteva: OIB projektna specifikacija, R1-02
+Izvor zahteva: OIB projektna specifikacija, odeljak R1-02
 „Asset inventory i kritičnost resursa“, strane 28–29.
 
-Ovaj dokument opisuje polja modela i pravila životnog ciklusa.
-Enum-i i AssetLifecycle implementirani su na grani feature/R1-02-model.
-Entitet Asset i njegove invarijante razvijaju se zasebno na grani
-feature/R1-02-invariant; opis polja usklađen je sa tim modelom.
+Obavezni use-case-ovi su:
 
-## Polja modela Asset
+- registracija asset-a;
+- dodela vlasnika;
+- klasifikacija kritičnosti;
+- promena statusa;
+- pretraga po domenu i vlasniku.
 
-- Id — AssetId: jedinstveni identifikator, generiše se pri registraciji
-  i ne menja se.
-- Name — string: obavezan naziv, najviše 200 karaktera.
-  Model odbija prazan naziv i naziv sastavljen samo od razmaka.
-  Pri čuvanju uklanja početne i završne razmake.
-- Type — AssetType: obavezna, definisana enum vrednost; ne menja se
-  nakon registracije.
-- DomainId — DomainId: identifikator domena kome asset pripada.
-  Vrednost ne sme biti Guid.Empty; ne menja se nakon registracije.
-- OwnerId — IdentityId: identifikator odgovornog vlasnika.
-  Pri registraciji ne sme biti Guid.Empty.
-- Criticality — Criticality: kritičnost mora biti eksplicitno zadata
-  kao definisana vrednost zajedničkog enum-a.
-- Status — LifecycleStatus: početna vrednost je Active.
-- CreatedAt — DateTimeOffset: vreme registracije; ne menja se.
-- UpdatedAt — DateTimeOffset: vreme poslednje uspešne izmene.
-  Pri registraciji jednako je CreatedAt.
+Specifikacija zahteva jedinstven identitet asset-a, očuvanje
+dekomisioniranog asset-a u istoriji i eksplicitnu, auditovanu kritičnost.
+
+## Model Asset
+
+Polja i pravila u nastavku predstavljaju domenski model T01.
+
+| Polje | Tip | Namena i pravilo |
+| --- | --- | --- |
+| Id | AssetId | Jedinstven identifikator; generiše se pri registraciji i ne menja se. |
+| Name | string | Obavezan naziv, najviše 200 karaktera; čuva se bez početnih i završnih razmaka. |
+| Type | AssetType | Definisana enum vrednost; ne menja se nakon registracije. |
+| DomainId | DomainId | Domen asset-a; identifikator nije Guid.Empty i ne menja se nakon registracije. |
+| OwnerId | IdentityId | Odgovorni vlasnik; identifikator nije Guid.Empty. |
+| Criticality | Criticality | Eksplicitno zadata, definisana vrednost zajedničkog enum-a. |
+| Status | LifecycleStatus | Početni status je Active. |
+| CreatedAt | DateTimeOffset | Vreme registracije; ne menja se. |
+| UpdatedAt | DateTimeOffset | Vreme poslednje uspešne izmene; pri registraciji jednako CreatedAt. |
 
 AssetId, DomainId, IdentityId i Criticality pripadaju zajedničkim
-domenskim tipovima. Njihove definicije se ne dupliraju u ovom zadatku.
+domenskim tipovima unutar T01 servisa.
 
-## Vrste asset-a
+## Enum-i
 
-AssetType ima sledeće vrednosti:
+### AssetType
 
 - Application = 1
 - Service = 2
@@ -46,23 +48,19 @@ AssetType ima sledeće vrednosti:
 - Data = 4
 - Other = 5
 
-Vrednost 0 nije definisana i ne predstavlja validan tip.
-
-## Statusi
-
-LifecycleStatus ima sledeće vrednosti:
+### LifecycleStatus
 
 - Active = 1 — aktivan resurs.
-- Inactive = 2 — privremeno neaktivan resurs, može ponovo da se aktivira.
+- Inactive = 2 — privremeno neaktivan resurs koji može ponovo da se aktivira.
 - Decommissioned = 3 — trajno povučen resurs koji ostaje u istoriji.
 
-Vrednost 0 nije definisana i ne predstavlja validan status.
+Vrednost 0 nije definisana ni u jednom od ova dva enum-a.
 
-## Pravila prelaza statusa
+## Životni ciklus
 
-Specifikacija zahteva promenu statusa i očuvanje dekomisioniranog
-asset-a u istoriji. Sledeća matrica je projektna odluka kojom se
-precizira svih devet kombinacija prelaza:
+Sledeća matrica predstavlja pravilo životnog ciklusa T01.
+Ona je projektna razrada zahteva za promenu statusa i očuvanje
+istorije; specifikacija ne propisuje pojedinačno svih devet prelaza.
 
 | Trenutni status | Novi status | Dozvoljeno |
 | --- | --- | --- |
@@ -76,55 +74,78 @@ precizira svih devet kombinacija prelaza:
 | Decommissioned | Inactive | Ne |
 | Decommissioned | Decommissioned | Ne |
 
-Prelaz u isti status nije promena i metoda ga odbija.
-Decommissioned je završno stanje: reaktivacija nije dozvoljena.
-Nedefinisane vrednosti početnog ili ciljnog statusa takođe se odbijaju.
+Prelaz u isti status se odbija jer ne predstavlja promenu.
+
+Decommissioned je završno stanje bez reaktivacije. Zapis asset-a
+ostaje sačuvan; dekomisioniranje ne predstavlja fizičko brisanje.
+
+Nedefinisane vrednosti početnog ili ciljnog statusa se odbijaju.
 
 ## Izvršivo pravilo
 
-Pravilo je implementirano metodom:
+Pravilo je definisano metodom:
 
-AssetLifecycle.CanTransition(LifecycleStatus current, LifecycleStatus next)
+`AssetLifecycle.CanTransition(LifecycleStatus current, LifecycleStatus next)`
 
-Metoda vraća true za dozvoljen prelaz, a false za ostale slučajeve.
-Nema sporednih efekata: ne menja Asset, ne upisuje podatke i ne šalje
-audit događaje.
+Metoda vraća true za četiri dozvoljena prelaza iz matrice.
+Za ostale slučajeve vraća false.
 
-Pri integraciji promene statusa, domenska operacija treba da pozove
-ovo pravilo pre izmene stanja. Odbijeni prelaz ne sme promeniti
-Status niti UpdatedAt.
+Metoda nema sporednih efekata: ne menja entitet, ne pristupa bazi,
+ne poziva druge servise i ne šalje audit događaje.
 
-Sama metoda CanTransition nije implementacija celog use-case-a
-promene statusa i ne proverava ovlašćenja korisnika.
+Operacija promene statusa treba da proveri ovo pravilo pre izmene
+stanja. Odbijeni prelaz ne sme promeniti Status niti UpdatedAt.
 
-## Invarijante i zavisnosti
+CanTransition proverava dozvoljenost prelaza, a ne ovlašćenje
+korisnika da izvrši operaciju.
 
-- Asset mora imati jedinstven identitet.
-- Dekomisioniran asset ostaje u istoriji; ne briše se fizički.
-- U usvojenom domenskom modelu dekomisioniran asset više se ne menja.
-- Kritičnost mora biti eksplicitna, a njena promena auditovana.
-- Funkcionalni preduslov R1-02 je R1-01: domeni.
-- Provera postojanja i aktivnog statusa domena pripada aplikacionom
-  toku preko ugovora sa servisom domena.
-- Provera vlasnika, autorizacija i slanje audit događaja rešavaju se
-  kroz odgovarajuće aplikacione tokove i ugovore sa drugim servisima.
-- Domain sloj ne poziva HTTP servise niti direktno pristupa bazi.
+## Zavisnosti i granice odgovornosti
 
-## Testovi i dokaz provere
+Obavezan funkcionalni preduslov iz specifikacije za R1-02 je R1-01.
+
+Zavisnosti razrađene u [README-u T01 servisa](../../README.md):
+
+- R1-01 — provera domena.
+- R1-03 — provera identiteta vlasnika.
+- R1-05 — provera dozvola korisnika.
+- R1-09 — slanje audit događaja.
+
+Postojanje i aktivnost domena, validnost vlasnika i ovlašćenja
+korisnika proveravaju se u aplikacionom toku preko odgovarajućih
+ugovora i adaptera. Domain sloj ne koristi HTTP niti direktno
+pristupa bazi.
+
+Naziv dozvole asset.write naveden je u README-u servisa.
+Konačni nazivi dozvola, endpoint-i i uslovi provere vlasnika
+usklađuju se sa prihvaćenim ugovorima nadležnih timova.
+Njihovo navođenje ovde ne predstavlja potvrdu prihvatanja ugovora.
+
+Kritičnost se eksplicitno zadaje pri registraciji, a njene promene
+moraju biti auditovane. Slanje audit događaja nije odgovornost
+metode CanTransition.
+
+## Testovi
 
 AssetLifecycleTests sadrži devet parametrizovanih NUnit slučajeva,
-po jedan za svaki red matrice prelaza.
+po jedan za svaki red matrice: četiri dozvoljena i pet zabranjenih
+prelaza.
 
-Proveravaju se četiri dozvoljena i pet zabranjenih prelaza.
-Negativni scenariji uključuju pokušaj reaktivacije dekomisioniranog
-asset-a i pokušaj prelaska u isti status.
+Negativni slučajevi proveravaju zabranu prelaska u isti status
+i zabranu svih prelaza iz Decommissioned. Time je obuhvaćen
+i pokušaj reaktivacije trajno povučenog asset-a.
 
 Nedefinisane enum vrednosti odbijaju se implementacijom, ali nisu
 obuhvaćene ovih devet test slučajeva.
 
-Pokretanje iz foldera services/t01-assets-risk:
+Pokretanje lifecycle testova iz foldera services/t01-assets-risk:
 
-dotnet test --filter FullyQualifiedName~AssetLifecycleTests
+    dotnet test --filter FullyQualifiedName~AssetLifecycleTests
 
-Prolazak ovih testova potvrđuje pravilo prelaza, a ne završetak
-celog R1-02 use-case-a ili integracije sa drugim servisima.
+Pokretanje svih testova T01 servisa kroz Docker, iz korena
+repozitorijuma u Bash terminalu:
+
+    bash scripts/scutum.sh test t01
+
+Testovi pravila potvrđuju dozvoljenost prelaza. Provera da operacije
+entiteta koriste pravilo, čuvaju stanje pri odbijanju i primenjuju
+autorizaciju zahteva zasebne testove odgovarajućih operacija.
