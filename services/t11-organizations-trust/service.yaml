@@ -3,8 +3,8 @@ id: T11
 slug: organizations-trust
 title: "Organizacije i trust granice"
 components: "R1-01, R1-14"
-team: ""                 # broj vašeg tima
-stack: "nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)"
+team: "11"                 # broj vašeg tima
+stack: ".NET 10"
 # scaffold = prazan šablon, CI preskače testove; active = servis ima 'tests' profil i CI ga pokreće
 status: scaffold
 # Portovi se NE menjaju (formula: api 8000+NN, ui 8100+NN, db 3400+NN)

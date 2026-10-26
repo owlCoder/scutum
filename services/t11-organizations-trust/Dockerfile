@@ -1,13 +1,24 @@
-# PLACEHOLDER — zamenite ga Dockerfile-om vašeg servisa (npr. višefazni build za .NET / Node / Java / Python).
-# Konvencije koje treba zadržati:
-#   * stage 'runtime' = servis koji sluša na portu 8080 i odgovara na GET /health
-#   * stage 'test'    = pokreće sve testove i vraća exit kod != 0 kada neki padne (koristi ga profil 'tests')
-#     i rezultate (npr. .trx / JUnit XML) piše u /results — CI ih čuva kao dokaz (services/<tNN>-*/TestResults)
+# ---- build ----
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /app
+COPY src/ ./src/
+RUN dotnet publish src/T11.Api/T11.Api.csproj -c Release -o /out
 
-FROM busybox:1.36 AS test
-CMD ["sh", "-c", "echo 'SCAFFOLD: dodajte testove i zamenite ovaj stage' && exit 1"]
-
-FROM busybox:1.36 AS runtime
-RUN mkdir /www && echo OK > /www/health
+# ---- runtime (the service) ----
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+ENV ASPNETCORE_URLS=http://+:8080
+COPY --from=build /out .
+USER $APP_UID
 EXPOSE 8080
-CMD ["httpd", "-f", "-p", "8080", "-h", "/www"]
+ENTRYPOINT ["dotnet", "T11.Api.dll"]
+
+# ---- test (used by the `tests` profile) ----
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS test
+WORKDIR /app
+COPY src/ ./src/
+COPY tests/ ./tests/
+RUN dotnet restore tests/T11.Tests/T11.Tests.csproj
+CMD ["dotnet", "test", "tests/T11.Tests/T11.Tests.csproj", "--no-restore", \
+     "--logger", "trx;LogFileName=results.trx", \
+     "--results-directory", "/results"]
