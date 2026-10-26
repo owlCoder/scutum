@@ -40,6 +40,12 @@ Putanje su relativne na `services/t03-authorization/`.
 Dodatni negativni testovi: `Read_WhenAssetIsInactive_Denies`,
 `Read_WhenSubjectIsInactive_DeniesDespiteExistingPermission`,
 `Read_WhenDependencyIsUnavailable_FailsClosed` (posebno permissions i assets).
+Regresija `Read_WhenDependencyIsUnavailable_MissingAndForeignHaveSamePublicResponse`
+proverava isti kompletan javni DTO za tuđi i nepostojeći ID pri oba prekida.
+Javni odgovor je `Denied / RESOURCE_UNAVAILABLE`, bez Resource podataka;
+audit razlikuje `ASSET_UNAVAILABLE`, `PERMISSIONS_UNAVAILABLE` i `RESOURCE_NOT_FOUND`
+gde je razlog moguće utvrditi. Pri prekidu permissions porta nema daljeg traženja
+resursa, pa oba audit zapisa imaju `PERMISSIONS_UNAVAILABLE`.
 Test source postoji; status novog izvršavanja je u `services/t03-authorization/docs/VALIDACIJA.md`.
 
 ### R2-12
@@ -135,7 +141,7 @@ Ovo je projektovana security matrica: redovi za Read imaju implementaciju; svi r
 | Ana, owner:change u dom-a | ChangeOwner | res-001 -> Marko iz dom-a | Allow | Aktuelni owner, validan cilj |
 | Ana, owner:change u dom-a | ChangeOwner | res-001 -> Ivana iz dom-b | Deny/Invalid | Novi owner izvan domena |
 | Neaktivan ili neprijavljen | bilo koja | zaštićeni resurs | Deny | Status/prethodna potvrda identiteta |
-| Bilo koji subject; port nedostupan | bilo koja | zaštićeni resurs | Deny/Unavailable | Fail-closed; bez promene stanja |
+| Aktivan prijavljen subject; port nedostupan | Read | zaštićeni resurs | Deny, RESOURCE_UNAVAILABLE | Fail-closed; isti javni DTO, interni dependency audit razlog; bez promene resursa |
 
 Za R2-12/R3-01 planirane odluke: nepoznata endpoint/policy klasa -> deny; prekoračen scoped rate limit -> reject; prevelik input -> reject; nepoznata klasifikacija -> deny; konflikt deny/allow -> deny. To je model, ne dokaz pune realizacije tih celina.
 
@@ -165,10 +171,12 @@ Globalni CI poziva `scripts/scutum.sh test t03`, koji izvršava Docker `tests` p
 restore/build/NUnit/demo i odvojenu Python statičku proveru. TRX izlazi u `TestResults/`.
 
 Tok rada ostaje Tapiz task -> feature branch -> PR -> CI + review -> SECURITY QA -> DONE.
-U dostavljenom lokalnom PowerShell izlazu 25.10.2026. build je uspeo i svih
-12 NUnit slučajeva je prošlo. Taj izlaz prethodi čistoj grani i nema zabeležen SHA
-ni sačuvan TRX. Nova provera i GitHub Actions run ostaju obavezni na čistoj grani;
-status i komande su u `services/t03-authorization/docs/VALIDACIJA.md`.
+Za čistu reviziju `3c00d0f` potvrđen je uspešan GitHub Actions run sa 12/12 NUnit
+slučajeva, demo ishodom 2/2 i artefaktom `test-results-t03`.
+Outage ispravka dodaje još dva regresiona slučaja; lokalni NUnitLite rezultat je
+14/14, a novi Docker/Actions prolaz još treba potvrditi na njenoj konačnoj reviziji.
+Direktni linkovi, razlika između dokaza i komande su u
+`services/t03-authorization/docs/VALIDACIJA.md`.
 Pre merge-a povezati novi PR sa starim PR-ovima #11 i #1 koje ovaj rad zamenjuje.
 
 ## 8. Prvo izvršivo pravilo i plan KT2

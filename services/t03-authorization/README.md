@@ -1,8 +1,12 @@
 # T03 — Object-level i API autorizacija i policy engine
 
 Obuhvat: R1-06, R2-12, R3-01. Ovo je korigovani KT1 paket, sa izvršivim Read tokom.
-Postojeća domenska i aplikaciona logika i tri originalna testa su sačuvani.
-Dodato je devet test slučajeva u `ReadResourceBoundaryTests` (ukupno 12).
+Postojeća pravila vlasništva/scope-a i tri originalna testa su sačuvani.
+Uz devet slučajeva u `ReadResourceBoundaryTests`, dodata su još dva outage
+regresiona slučaja u `ReadResourceOutageTests` (ukupno 14 u test source-u).
+Prekid asset ili permission servisa javno daje isti `Denied / RESOURCE_UNAVAILABLE`
+kao nepostojeći ili tuđi resurs. Interni audit razlikuje `ASSET_UNAVAILABLE`,
+`PERMISSIONS_UNAVAILABLE` i `RESOURCE_NOT_FOUND`. Status izvršavanja je u validaciji.
 Update/ChangeOwner write tok, CAS i novi owner validation su PLAN KT2.
 R2-12 i R3-01 su planirane celine, ne implementirani API/policy engine.
 Asistent je prihvatio Read-only demonstraciju kao parcijalni KT1 dokaz;

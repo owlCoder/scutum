@@ -39,7 +39,7 @@ Ok response mora biti aktuelni snapshot dozvola za traženi subject. Svaki grant
 }
 ```
 
-Negativni odgovor: `{"status":"NotFound","value":null}` za nepoznat subject. Poznat subject bez prava može dati Ok sa grants=[]; T03 ga odbija. Failure: `{"status":"Unavailable","value":null}`; T03 daje DEPENDENCY_UNAVAILABLE bez promene stanja.
+Negativni odgovor: `{"status":"NotFound","value":null}` za nepoznat subject. Poznat subject bez prava može dati Ok sa grants=[]; T03 ga odbija. Failure: `{"status":"Unavailable","value":null}`; T03 javno daje `Denied / RESOURCE_UNAVAILABLE`, bez sadržaja i bez promene resursa. Audit čuva interni razlog `PERMISSIONS_UNAVAILABLE`. Isto javno odbijanje za tuđi i nepostojeći ID proverava outage regresioni test; dostupnost zavisnosti nije javni podatak o traženom resursu.
 
 **Planirani contract testovi (nisu implementirani):** `PermissionsProviderContract.KnownSubjectHasExplicitScope` i `UnknownSubjectIsNotGrantedImplicitly`. Plan za KT2/KT3 je apstraktna fixture klasa: kada realni adapter postoji, nova izvedena fixture implementira CreateProvider i iste testove izvršava nad dogovorenim testnim stanjem. Dodatni security testovi proveravaju pogrešan scope i offline stanje.
 
@@ -57,6 +57,10 @@ Negativni odgovor: `{"status":"NotFound","value":null}` za nepoznat subject. Poz
 ```
 
 NotFound i Unavailable imaju Value=null. IsActive=false ili scope mismatch znači deny. ProtectedResource.AssetId mora odgovarati vraćenom AssetSnapshot.Id. Resource owner vezu i sadržaj poseduje T03, a R1-02 je autoritet za scope/aktivnost inventara.
+
+`Unavailable` se javno mapira na isti `Denied / RESOURCE_UNAVAILABLE` DTO kao
+nepostojeći ili tuđi resurs. Audit postojećeg ID-a čuva `ASSET_UNAVAILABLE`, dok
+nepostojeći ID čuva `RESOURCE_NOT_FOUND`, jer se katalog u tom toku ne poziva.
 
 **Planirani contract testovi (nisu implementirani):** `AssetCatalogContract.KnownAssetHasAuthoritativeScope` i `UnknownAssetReturnsNoMetadata`. Postojeći security testovi: `Read_WhenAssetIsInactive_Denies`, `Read_WhenDependencyIsUnavailable_FailsClosed` i testovi scope izolacije u `ReadResourceBoundaryTests`. Missing asset contract test ostaje planiran.
 
@@ -117,6 +121,10 @@ ScopeId u događaju je scope subjekta. Za cross-scope deny ne isporučuje se met
 Realizovani `Read` ne menja resurs, ali upisuje audit za svaki obrađeni zahtev.
 Ponovljeno čitanje zato stvara novi audit zapis. CorrelationId služi praćenju,
 ne predstavlja deduplication ključ. `Unavailable` odgovor porta ne daje pristup.
+Javni `Outcome`, `Code`, `Message` i `Resource` tada su isti kao za nepostojeći
+resurs: `Denied`, `RESOURCE_UNAVAILABLE`, `Resurs nije dostupan.`, null.
+Interni audit ima outcome `DENIED` i konkretan dependency razlog; jednakost
+vremena obrade nije garantovana.
 
 **PLAN KT2, nije implementiran:** Update/ChangeOwner sa ExpectedVersion,
 VERSION_CONFLICT, povećanjem verzije i atomskim CAS + audit upisom. Trenutni

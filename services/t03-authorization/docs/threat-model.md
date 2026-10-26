@@ -10,8 +10,9 @@ Klijent šalje ResourceId i CorrelationId, ne dozvole ni identitet za odluku.
 | R1-06 domen | prelazak scope granice | Subject.ScopeId == asset.ScopeId | Read_WhenSubjectScopeDiffers_DeniesEvenWithGrantForTargetScope | implementirano |
 | R1-06 grant | ReadAny iz drugog domena | scope granta se proverava | Read_WhenGrantIsForAnotherScope_DeniesOwner | implementirano |
 | R1-06 stanje | neaktivan subjekt/asset čita | provera aktivnosti | Read_WhenSubjectIsInactive_DeniesDespiteExistingPermission; Read_WhenAssetIsInactive_Denies | implementirano |
-| R1-06 dostupnost | nedostupan upstream daje pristup | kontrolisan Unavailable bez resursa | Read_WhenDependencyIsUnavailable_FailsClosed | implementirano za PortStatus.Unavailable |
+| R1-06 dostupnost | nedostupan upstream daje pristup | javni Denied/RESOURCE_UNAVAILABLE bez resursa; interni dependency razlog u auditu | Read_WhenDependencyIsUnavailable_FailsClosed | implementirano za PortStatus.Unavailable |
 | R1-06 metadata | otkrivanje postojanja tuđeg ID-a | identičan javni DTO | Read_WhenResourceIsMissingOrForeign_ReturnsIdenticalPublicResponse | implementirano; timing jednakost nije garantovana |
+| R1-06 metadata pri outage-u | postojeći ID daje dependency grešku, nepostojeći deny | isti kompletan javni DTO pri prekidu asset/permission servisa; interni razlozi ostaju u auditu | Read_WhenDependencyIsUnavailable_MissingAndForeignHaveSamePublicResponse (assets/permissions) | regresioni testovi dodati; status izvršavanja u VALIDACIJA.md |
 | R2-12 API granica | zaobilaženje auth, prevelik input, previše zahteva | endpoint policy + scoped rate limit + input granice | planirani testovi T03-020..024 | PLAN KT3 |
 | R3-01 policy odluka | nepouzdani atributi ili konflikt daju allow | pouzdani portovi, deterministički deny-overrides | planirani testovi T03-030..034 | PLAN KT3/KT4 |
 

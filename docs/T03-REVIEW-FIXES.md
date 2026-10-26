@@ -41,14 +41,36 @@ zatvaranje/usaglašavanje ostaje korak koordinacije; ovde se ne tvrdi da su zatv
 
 ## Validacija i uslov za merge
 
-Lokalni PowerShell izlaz od 25.10.2026. pokazuje uspešan build i 12/12 testova
-pre kreiranja čiste grane. To nije dokaz CI-a na novoj grani.
-Status i ponovljive komande su u `services/t03-authorization/docs/VALIDACIJA.md`.
+Čista revizija `3c00d0f` ima potvrđen uspešan Actions run sa 12/12 NUnit
+slučajeva, demo ishodom 2/2 i artefaktom `test-results-t03`. To je dokaz prethodne
+revizije, pre outage ispravke. Linkovi i status nove provere su u
+`services/t03-authorization/docs/VALIDACIJA.md`.
 
 Pre merge-a potrebni su stvarni TRX rezultat, proverena oba Compose test servisa
 i uspešan GitHub Actions run na konačnoj reviziji: `structure`, `secrets`,
 `selftest (scripts)`, `tests (t03)` i `ci-ok`. Novi PR opis mora sadržati
 ograničenja KT1 obuhvata i link do stvarnog CI run-a/artefakta.
+
+## Outage regresija iz ponovnog review-a PR-a #12
+
+Raniji handler je za postojeći ID pri prekidu asset kataloga davao javni
+`DEPENDENCY_UNAVAILABLE`, a za nepostojeći ID `RESOURCE_UNAVAILABLE`.
+Time je omogućavao razlikovanje postojanja resursa po odgovoru.
+
+Oba prekida zavisnosti sada daju isti kompletan javni DTO kao običan deny:
+`Denied`, `RESOURCE_UNAVAILABLE`, `Resurs nije dostupan.`, `Resource = null`.
+Audit outcome je `DENIED`, a interni razlozi su `ASSET_UNAVAILABLE`,
+`PERMISSIONS_UNAVAILABLE` i `RESOURCE_NOT_FOUND`, gde je uzrok moguće utvrditi.
+Kod prekida permissions porta nema daljeg traženja resursa, pa oba ID-a imaju
+isti interni razlog `PERMISSIONS_UNAVAILABLE`.
+
+`ReadResourceOutageTests` dodaje dva regresiona slučaja za tuđi i nepostojeći
+ID pri prekidu asset i permission servisa. Porede se sva javna polja, proveravaju
+nepromenjeno stanje resursa i interni audit razlozi, target-i i korelacije.
+Postojeća dva owner outage testa usklađena su sa novim javnim deny ugovorom.
+Sa starim handlerom nova dva slučaja padaju; sa ispravkom svih 14 slučajeva
+prolazi lokalno kroz NUnitLite. Novi standardni Docker/Actions run je i dalje
+uslov za merge. Zajednički CI i skripte nisu menjani.
 
 ## Primedba na rezervisane Compose portove
 

@@ -70,9 +70,9 @@ public sealed class ReadResourceBoundaryTests
         AssertDenied(result, "INACTIVE_SUBJECT");
     }
 
-    [TestCase("permissions")]
-    [TestCase("assets")]
-    public void Read_WhenDependencyIsUnavailable_FailsClosed(string dependency)
+    [TestCase("permissions", "PERMISSIONS_UNAVAILABLE")]
+    [TestCase("assets", "ASSET_UNAVAILABLE")]
+    public void Read_WhenDependencyIsUnavailable_FailsClosed(string dependency, string reason)
     {
         var before = _fixture.Store.Find("res-001");
         _fixture.Permissions.IsUnavailable = dependency == "permissions";
@@ -82,11 +82,11 @@ public sealed class ReadResourceBoundaryTests
 
         using (Assert.EnterMultipleScope())
         {
-            Assert.That(result, Is.EqualTo(new OperationResult(OperationOutcome.Unavailable,
-                "DEPENDENCY_UNAVAILABLE", "Operacija trenutno nije dostupna.")));
+            Assert.That(result, Is.EqualTo(new OperationResult(OperationOutcome.Denied,
+                "RESOURCE_UNAVAILABLE", "Resurs nije dostupan.")));
             Assert.That(_fixture.Store.Find("res-001"), Is.EqualTo(before));
-            Assert.That(_fixture.Store.Audit.Single().Outcome, Is.EqualTo("UNAVAILABLE"));
-            Assert.That(_fixture.Store.Audit.Single().ReasonCode, Is.EqualTo("DEPENDENCY_UNAVAILABLE"));
+            Assert.That(_fixture.Store.Audit.Single().Outcome, Is.EqualTo("DENIED"));
+            Assert.That(_fixture.Store.Audit.Single().ReasonCode, Is.EqualTo(reason));
             Assert.That(_fixture.Store.Audit.Single().CorrelationId, Is.EqualTo(Correlation));
         }
     }

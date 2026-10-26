@@ -28,14 +28,16 @@ public sealed class ResourceHandlers(Subject subject, IEffectivePermissionsProvi
         if (!subject.IsActive) return Deny("INACTIVE_SUBJECT", id, correlationId);
 
         var permissionReply = permissions.GetFor(subject.Id);
-        if (permissionReply.Status == PortStatus.Unavailable) return Offline(id, correlationId);
+        if (permissionReply.Status == PortStatus.Unavailable)
+            return Deny("PERMISSIONS_UNAVAILABLE", id, correlationId);
         if (permissionReply.Status != PortStatus.Ok || permissionReply.Value is null)
             return Deny("PERMISSIONS_NOT_FOUND", id, correlationId);
 
         var resource = store.Find(id);
         if (resource is null) return Deny("RESOURCE_NOT_FOUND", id, correlationId);
         var assetReply = assets.Find(resource.AssetId);
-        if (assetReply.Status == PortStatus.Unavailable) return Offline(id, correlationId);
+        if (assetReply.Status == PortStatus.Unavailable)
+            return Deny("ASSET_UNAVAILABLE", id, correlationId);
         if (assetReply.Status != PortStatus.Ok || assetReply.Value is null)
             return Deny("ASSET_NOT_FOUND", id, correlationId);
 
@@ -48,11 +50,9 @@ public sealed class ResourceHandlers(Subject subject, IEffectivePermissionsProvi
     }
 
     private static bool ValidId(string? id) => id is not null && IdPattern.IsMatch(id);
+    // Interni razlog ostaje u auditu; javni deny ne otkriva postojanje resursa ni pri outage-u.
     private OperationResult Deny(string reason, string id, Guid correlation) =>
         Fail(OperationOutcome.Denied, "RESOURCE_UNAVAILABLE", "Resurs nije dostupan.", reason, id, correlation);
-    private OperationResult Offline(string id, Guid correlation) =>
-        Fail(OperationOutcome.Unavailable, "DEPENDENCY_UNAVAILABLE", "Operacija trenutno nije dostupna.",
-            "DEPENDENCY_UNAVAILABLE", id, correlation);
     private OperationResult Fail(OperationOutcome outcome, string code, string message,
         string reason, string id, Guid correlation)
     {
