@@ -7,7 +7,7 @@ namespace T08.Infrastructure.Stubs;
 /// Stub za R1-02 dok T01 ne objavi servis (SEC-DEP-02). Podržava normalan i failure ishod;
 /// namerno nema security logiku T01 (SEC-DEP-03): samo vraća ono što mu je upisano.
 /// </summary>
-public sealed class StubAssetDirectory : IAssetDirectory
+public sealed class StubAssetDirectory : IAssetReader
 {
     private readonly ConcurrentDictionary<string, AssetInfo> _assets = new();
 
@@ -24,14 +24,14 @@ public sealed class StubAssetDirectory : IAssetDirectory
     {
         if (Unavailable) return Task.FromResult(DirectoryResult<AssetInfo>.Unavailable());
         if (!_assets.TryGetValue(assetId, out var asset)) return Task.FromResult(DirectoryResult<AssetInfo>.NotFound());
-        return Task.FromResult(asset.Status == AssetStatus.Decommissioned
+        return Task.FromResult(asset.Status != AssetStatus.Active
             ? DirectoryResult<AssetInfo>.Inactive()
             : DirectoryResult<AssetInfo>.Found(asset));
     }
 }
 
 /// <summary>Stub za R1-14 dok T11 ne objavi servis; isto pravilo kao <see cref="StubAssetDirectory"/>.</summary>
-public sealed class StubZoneDirectory : IZoneDirectory
+public sealed class StubZoneDirectory : IZoneReader
 {
     private readonly ConcurrentDictionary<string, ZoneInfo> _zones = new();
 

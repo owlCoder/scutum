@@ -26,12 +26,15 @@ public sealed class InMemoryAuditSink : IAuditSink
 
 /// <summary>
 /// Producer ne sme da izgubi događaj bez traga (C-AUDIT-v1): kad T04 nije dostupan, događaj ostaje u redu
-/// i šalje se pri sledećem <see cref="FlushAsync"/>. Red je u memoriji, pa se restart procesa računa kao
-/// poznato ograničenje (trajni outbox je van obima R1-18-AUDIT).
+/// i šalje se pri sledećem <see cref="FlushAsync"/>. Red čuva redosled (dok ima starijih, novi se samo dodaje)
+/// i ograničen je na <paramref name="maxPending"/>; kad je pun, najstariji se odbacuje i broji u <see cref="Dropped"/>
+/// (nema neograničenog rasta memorije). Red je u memoriji, pa se restart procesa računa kao poznato ograničenje
+/// (trajni outbox je van obima R1-18-AUDIT).
 /// </summary>
-public sealed class BufferedAuditSink(IAuditSink inner) : IAuditSink
+public sealed class BufferedAuditSink(IAuditSink inner, int maxPending = 1000) : IAuditSink
 {
     private readonly object _gate = new();
+    private readonly SemaphoreSlim _flushing = new(1, 1);
     private readonly Queue<AuditEvent> _pending = new();
 
     public int Pending
@@ -39,37 +42,66 @@ public sealed class BufferedAuditSink(IAuditSink inner) : IAuditSink
         get { lock (_gate) return _pending.Count; }
     }
 
+    /// <summary>Broj događaja odbačenih zbog punog reda; nije nula = audit je nepotpun i operater mora da reaguje.</summary>
+    public int Dropped { get; private set; }
+
     public async Task<AuditWriteOutcome> RecordAsync(AuditEvent auditEvent, CancellationToken ct = default)
     {
         await FlushAsync(ct).ConfigureAwait(false);   // redosled: stariji događaji prvi
 
-        var outcome = await inner.RecordAsync(auditEvent, ct).ConfigureAwait(false);
-        if (outcome == AuditWriteOutcome.Unavailable)
+        if (Pending > 0)
         {
-            lock (_gate) _pending.Enqueue(auditEvent);
+            Enqueue(auditEvent);   // T04 i dalje ne prima starije; novi ne sme da ih pretekne
+            return AuditWriteOutcome.Buffered;
         }
 
-        return outcome;
+        var outcome = await inner.RecordAsync(auditEvent, ct).ConfigureAwait(false);
+        if (outcome != AuditWriteOutcome.Unavailable) return outcome;
+
+        Enqueue(auditEvent);
+        return AuditWriteOutcome.Buffered;
     }
 
     /// <summary>Pokušava da isprazni red; staje na prvom nedostupnom ishodu. Odbijeni (400) događaj se odbacuje iz reda.</summary>
     public async Task FlushAsync(CancellationToken ct = default)
     {
-        while (true)
+        await _flushing.WaitAsync(ct).ConfigureAwait(false);   // jedan flush u isto vreme: nema dvostrukog slanja
+        try
         {
-            AuditEvent next;
-            lock (_gate)
+            while (true)
             {
-                if (_pending.Count == 0) return;
-                next = _pending.Peek();
+                AuditEvent next;
+                lock (_gate)
+                {
+                    if (_pending.Count == 0) return;
+                    next = _pending.Peek();
+                }
+
+                if (await inner.RecordAsync(next, ct).ConfigureAwait(false) == AuditWriteOutcome.Unavailable) return;
+
+                lock (_gate)
+                {
+                    if (_pending.Count > 0 && ReferenceEquals(_pending.Peek(), next)) _pending.Dequeue();
+                }
+            }
+        }
+        finally
+        {
+            _flushing.Release();
+        }
+    }
+
+    private void Enqueue(AuditEvent auditEvent)
+    {
+        lock (_gate)
+        {
+            if (_pending.Count >= maxPending)
+            {
+                _pending.Dequeue();
+                Dropped++;
             }
 
-            if (await inner.RecordAsync(next, ct).ConfigureAwait(false) == AuditWriteOutcome.Unavailable) return;
-
-            lock (_gate)
-            {
-                if (_pending.Count > 0 && ReferenceEquals(_pending.Peek(), next)) _pending.Dequeue();
-            }
+            _pending.Enqueue(auditEvent);
         }
     }
 }

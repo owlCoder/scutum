@@ -16,6 +16,15 @@ public sealed record AuditEvent
 
     private static readonly string[] ForbiddenKeyParts = ["password", "secret", "token", "authorization", "credential", "apikey"];
 
+    // Vrednosti koje liče na tajnu (SEC-CONV-05): JWT, Bearer zaglavlje, privatni ključ ili "password=..." u slobodnom tekstu.
+    private static readonly System.Text.RegularExpressions.Regex SecretLikeValue = new(
+        @"eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*"
+        + @"|\bBearer\s+\S{8,}"
+        + @"|-----BEGIN [A-Z ]*PRIVATE KEY-----"
+        + @"|\b(password|passwd|secret|token|api[_-]?key|authorization)\s*[=:]\s*\S+",
+        System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant,
+        TimeSpan.FromMilliseconds(100));
+
     public DateTimeOffset OccurredAt { get; }
     public string Actor { get; }
     public string Action { get; }
@@ -59,6 +68,9 @@ public sealed record AuditEvent
             if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("Prazan ključ u details.", nameof(details));
             if (ForbiddenKeyParts.Any(p => key.Contains(p, StringComparison.OrdinalIgnoreCase)))
                 throw new ArgumentException($"Ključ '{key}' u details liči na tajnu.", nameof(details));
+            if (value is null) throw new ArgumentException($"Vrednost za '{key}' u details je null.", nameof(details));
+            if (SecretLikeValue.IsMatch(value))
+                throw new ArgumentException($"Vrednost za '{key}' u details liči na tajnu.", nameof(details));
             size += Encoding.UTF8.GetByteCount(key) + Encoding.UTF8.GetByteCount(value);
         }
 
@@ -79,7 +91,9 @@ public enum AuditWriteOutcome
     /// <summary>T04 je odbio događaj (400). Ponavljanje istog događaja nema smisla.</summary>
     Rejected,
     /// <summary>T04 nije dostupan; događaj nije upisan i producer ga mora sačuvati.</summary>
-    Unavailable
+    Unavailable,
+    /// <summary>Samo za sink sa baferom: T04 trenutno ne prima događaj, ali ga je producer zadržao i poslaće ga kasnije.</summary>
+    Buffered
 }
 
 /// <summary>Port ka R1-09 (T04), ugovor C-AUDIT-v1.</summary>

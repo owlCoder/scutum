@@ -31,6 +31,22 @@ public class AuditEventTests
     public void Secret_like_detail_keys_are_rejected(string key) =>
         Assert.Throws<ArgumentException>(() => Make(details: new Dictionary<string, string> { [key] = "x" }));
 
+    [TestCase("eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEifQ.c2lnbmF0dXJl", Description = "JWT")]
+    [TestCase("Bearer abcdef0123456789", Description = "Bearer zaglavlje")]
+    [TestCase("-----BEGIN PRIVATE KEY-----", Description = "privatni ključ")]
+    [TestCase("password=hunter2", Description = "password=")]
+    [TestCase("failed with api_key: sk-123", Description = "api_key u slobodnom tekstu")]
+    public void Secret_like_detail_values_are_rejected_even_under_a_harmless_key(string value) =>
+        Assert.Throws<ArgumentException>(() => Make(details: new Dictionary<string, string> { ["note"] = value }));
+
+    [TestCase("asset-1")]
+    [TestCase("Unknown")]
+    [TestCase("decommissioned")]
+    [TestCase("3f2504e04f8911d39a0c0305e82c3301")]
+    [TestCase("Token bucket exhausted")]   // reč bez „=“ ili „:“ nije tajna
+    public void Identifiers_and_codes_are_accepted_as_detail_values(string value) =>
+        Assert.DoesNotThrow(() => Make(details: new Dictionary<string, string> { ["note"] = value }));
+
     [Test]
     public void Details_over_2_KB_are_rejected() =>
         Assert.Throws<ArgumentException>(() =>
@@ -143,6 +159,40 @@ public class HttpAuditSinkTests
         Assert.That(root.GetProperty("sensitivity").GetString(), Is.EqualTo("High"));
         Assert.That(root.GetProperty("target").GetString(), Is.EqualTo("exposure:e-1"));
         Assert.That(root.GetProperty("details").GetProperty("assetId").GetString(), Is.EqualTo("asset-1"));
+        Assert.That(root.GetProperty("actor").GetString(), Is.EqualTo("ro-1"));
+        Assert.That(root.GetProperty("correlationId").GetGuid(), Is.EqualTo(Evt.CorrelationId));
+        Assert.That(root.GetProperty("occurredAt").GetDateTimeOffset(), Is.EqualTo(Evt.OccurredAt));
+    }
+
+    [Test]
+    public async Task Real_HttpClient_timeout_is_unavailable_not_an_exception()
+    {
+        // Pravi HttpClient.Timeout (u hostu je 5 s; ovde 200 ms), a upstream nikad ne odgovara.
+        using var http = new HttpClient(new CancellableHang()) { BaseAddress = new Uri("http://t04.test/"), Timeout = TimeSpan.FromMilliseconds(200) };
+
+        var outcome = await new HttpAuditSink(http).RecordAsync(Evt);
+
+        Assert.That(outcome, Is.EqualTo(AuditWriteOutcome.Unavailable));
+    }
+
+    [Test]
+    public void Caller_cancellation_is_not_reported_as_unavailable()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        using var http = new HttpClient(new CancellableHang()) { BaseAddress = new Uri("http://t04.test/") };
+
+        Assert.ThrowsAsync(Is.InstanceOf<OperationCanceledException>(), () => new HttpAuditSink(http).RecordAsync(Evt, cts.Token));
+    }
+
+    /// <summary>Upstream koji nikad ne odgovara, ali poštuje otkazivanje (kao pravi socket).</summary>
+    private sealed class CancellableHang : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
+            return new HttpResponseMessage();
+        }
     }
 
     [TestCase(HttpStatusCode.Accepted, AuditWriteOutcome.Accepted)]
@@ -209,8 +259,8 @@ public class InMemoryAndBufferedAuditSinkTests
         var upstream = new InMemoryAuditSink { Unavailable = true };
         var buffered = new BufferedAuditSink(upstream);
 
-        Assert.That(await buffered.RecordAsync(Evt("e-1", 1)), Is.EqualTo(AuditWriteOutcome.Unavailable));
-        Assert.That(await buffered.RecordAsync(Evt("e-2", 2)), Is.EqualTo(AuditWriteOutcome.Unavailable));
+        Assert.That(await buffered.RecordAsync(Evt("e-1", 1)), Is.EqualTo(AuditWriteOutcome.Buffered));
+        Assert.That(await buffered.RecordAsync(Evt("e-2", 2)), Is.EqualTo(AuditWriteOutcome.Buffered));
         Assert.That(buffered.Pending, Is.EqualTo(2));
         Assert.That(upstream.Events, Is.Empty);
 

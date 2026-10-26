@@ -18,11 +18,14 @@ public sealed record DirectoryResult<T>(DirectoryOutcome Outcome, T? Value) wher
     public static DirectoryResult<T> Unavailable() => new(DirectoryOutcome.Unavailable, null);
 }
 
-/// <summary>SEC-CONV-01: format identifikatora iz javnih ugovora.</summary>
+/// <summary>
+/// SEC-CONV-01: format identifikatora iz javnih ugovora: mala slova, cifre i crtica, do 64 znaka.
+/// Cifra je dozvoljena na početku jer T01 koristi GUID (kanonski, mala slova), a on često počinje cifrom.
+/// </summary>
 public static class ContractIdentifier
 {
     private static readonly System.Text.RegularExpressions.Regex Pattern =
-        new(@"^[a-z][a-z0-9-]{0,63}\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        new(@"^[a-z0-9][a-z0-9-]{0,63}\z", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     public static bool IsValid(string? value) => value is not null && Pattern.IsMatch(value);
 }

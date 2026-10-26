@@ -3,7 +3,7 @@ using T08.Application.Directories;
 namespace T08.Infrastructure.Directories;
 
 /// <summary>Adapter ka R1-14 (T11), ugovor C-ZONE-v1. BaseAddress se postavlja konfiguracijom (npr. T11_BASE_URL).</summary>
-public sealed class HttpZoneDirectory(HttpClient http) : IZoneDirectory
+public sealed class HttpZoneDirectory(HttpClient http) : IZoneReader
 {
     private sealed record Dto(string? Id, string? OwnerId, string? TrustLevel, string? Status);
 

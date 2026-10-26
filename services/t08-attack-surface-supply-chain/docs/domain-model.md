@@ -35,6 +35,32 @@ Invarijante:
 - Promena klasifikacije ili statusa exposure-a čiji je asset `Critical`/`High` obavezno proizvodi audit događaj.
 - Referenca na asset/zonu mora proći ugovor (`C-ASSET-v1`, `C-ZONE-v1`): nepoznat ili dekomisionisan asset i neaktivna zona se odbijaju.
 
+### Prelazi stanja (Exposure)
+
+```mermaid
+stateDiagram-v2
+  [*] --> Active_Unknown: Register
+  state Active {
+    Active_Unknown --> Active_Approved: Classify(Approved)
+    Active_Unknown --> Active_Temporary: Classify(Temporary, expiresAt)
+    Active_Approved --> Active_Unknown: Classify(Unknown)
+    Active_Approved --> Active_Temporary: Classify(Temporary, expiresAt)
+    Active_Temporary --> Active_Unknown: Classify(Unknown)
+    Active_Temporary --> Active_Approved: Classify(Approved)
+    Active_Temporary --> Active_Temporary: Classify(Temporary, novi expiresAt)
+  }
+  Active --> Closed: Close(reasonCode)
+  Closed --> [*]
+```
+
+| Operacija | Iz `Active` (bilo koja klasifikacija) | Iz `Closed` |
+| --- | --- | --- |
+| `Classify(cilj)` | dozvoljeno za svaki par (3×3); isto stanje sa istim istekom je no-op (bez nove verzije); `Temporary` traži budući `expiresAt`, ostali ga brišu/ne smeju imati | `EXPOSURE_CLOSED` |
+| `Confirm` | dozvoljeno, ne menja klasifikaciju, podiže verziju (svaka potvrda je nov pregled) | `EXPOSURE_CLOSED` |
+| `Close(reasonCode)` | dozvoljeno, zadržava klasifikaciju, `Closed` je terminalno | `EXPOSURE_CLOSED` |
+
+Pokriveno testovima `ExposureTransitionMatrixTests` (svih 9 parova klasifikacije, sve operacije nad `Closed`). Statusi za `Dependency` i `ReleaseDecision` nisu definisani dok R2-13/R3-17 nisu započeti.
+
 ## R2-13 — Dependency / supply chain
 
 | Entitet | Ključna polja | Napomena |
@@ -56,6 +82,8 @@ Invarijante: zavisnost bez verzije/identiteta se odbija; rizik se zatvara samo n
 | `ProvenanceAttestation` | `builder`, `sourceRef`, `builtAt`, `approvals[]` | simulirani podaci; to su **tvrdnje**, ne dokaz |
 | `TrustPolicy` | `version`, `requiredEvidence[]`, `criticalThreshold` | verzionisana |
 | `ReleaseDecision` | `releaseId`, `policyVersion`, `snapshotId`, `outcome` (`Allow`/`Warn`/`Block`), `reasons[]`, `decidedAt`, `exceptionRef?` | reproducibilna: čuva verziju policy-ja i snapshot |
+
+**`ReleaseEvidence`** nije poseban entitet: to je zajednički naziv za dokaze koje `TrustPolicy.requiredEvidence[]` traži, a koje nose `ProvenanceAttestation` (builder, sourceRef, approvals) i `DependencySnapshot` (R2-13). Ako R3-17 zatraži zaseban entitet, dodaje se tu uz vlasnika i status; do tada se ne uvodi spekulativno.
 
 Invarijante: nedostatak dokaza nije `Allow`; izuzetak ima rok i ne uklanja nalaz; digest se računa standardnom bibliotekom.
 

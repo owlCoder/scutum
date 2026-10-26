@@ -27,6 +27,41 @@ internal sealed class FakeUpstream(Func<HttpRequestMessage, HttpResponseMessage>
     public HttpClient Client() => new(this) { BaseAddress = new Uri("http://upstream.test/") };
 }
 
+/// <summary>Upstream koji nikad ne odgovara, ali poštuje otkazivanje (kao pravi socket); ugrađen <c>HttpClient.Timeout</c> ga prekida.</summary>
+internal sealed class HangingUpstream : HttpMessageHandler
+{
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        await Task.Delay(Timeout.Infinite, ct).ConfigureAwait(false);
+        return new HttpResponseMessage();
+    }
+
+    public static HttpClient Client() =>
+        new(new HangingUpstream()) { BaseAddress = new Uri("http://upstream.test/"), Timeout = TimeSpan.FromMilliseconds(200) };
+}
+
+[TestFixture]
+public class RealHttpClientTimeoutTests
+{
+    [Test]
+    public async Task Asset_adapter_maps_a_real_HttpClient_timeout_to_unavailable()
+    {
+        var result = await new HttpAssetDirectory(HangingUpstream.Client()).GetAsync("asset-1", Guid.NewGuid());
+
+        Assert.That(result.Outcome, Is.EqualTo(DirectoryOutcome.Unavailable));
+        Assert.That(result.Value, Is.Null);
+    }
+
+    [Test]
+    public async Task Zone_adapter_maps_a_real_HttpClient_timeout_to_unavailable()
+    {
+        var result = await new HttpZoneDirectory(HangingUpstream.Client()).GetAsync("zone-1", Guid.NewGuid());
+
+        Assert.That(result.Outcome, Is.EqualTo(DirectoryOutcome.Unavailable));
+        Assert.That(result.Value, Is.Null);
+    }
+}
+
 [TestFixture]
 public class HttpAssetDirectoryTests
 {

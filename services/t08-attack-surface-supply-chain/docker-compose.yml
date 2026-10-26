@@ -15,7 +15,11 @@ services:
       DB_NAME: ${DB_NAME:?kopirajte .env.example u .env}
       DB_USER: ${DB_USER:?kopirajte .env.example u .env}
       DB_PASSWORD: ${DB_PASSWORD:?kopirajte .env.example u .env}
-      # T04_BASE_URL: ${T04_BASE_URL:-http://t04-api:8080}
+      # Upstream servisi: ako nisu zadati, T08 koristi stub (samo razvoj). Token servisa dolazi iz .env, nikad iz repozitorijuma.
+      T01_BASE_URL: ${T01_BASE_URL:-}
+      T11_BASE_URL: ${T11_BASE_URL:-}
+      T04_BASE_URL: ${T04_BASE_URL:-}
+      T08_SERVICE_TOKEN: ${T08_SERVICE_TOKEN:-}
     ports:
       - "127.0.0.1:${API_PORT:?kopirajte .env.example u .env}:8080"
     depends_on:
