@@ -51,7 +51,8 @@ public static class T08Host
         if (string.IsNullOrWhiteSpace(config["T04_BASE_URL"]))
         {
             builder.Services.AddSingleton<InMemoryAuditSink>();
-            builder.Services.AddSingleton<IAuditSink>(sp => new BufferedAuditSink(sp.GetRequiredService<InMemoryAuditSink>()));
+            builder.Services.AddSingleton(sp => new BufferedAuditSink(sp.GetRequiredService<InMemoryAuditSink>()));
+            builder.Services.AddSingleton<IAuditSink>(sp => sp.GetRequiredService<BufferedAuditSink>());
         }
         else
         {
@@ -62,7 +63,16 @@ public static class T08Host
                     client.Timeout = TimeSpan.FromSeconds(5);
                 })
                 .AddHttpMessageHandler(_ => new BearerTokenHandler(ServiceToken));
-            builder.Services.AddSingleton<IAuditSink>(sp => new BufferedAuditSink(sp.GetRequiredService<HttpAuditSink>()));
+            builder.Services.AddSingleton(sp => new BufferedAuditSink(sp.GetRequiredService<HttpAuditSink>()));
+            builder.Services.AddSingleton<IAuditSink>(sp => sp.GetRequiredService<BufferedAuditSink>());
+        }
+
+        // Pozadinski flush (podrazumevano na 10 s; T08_AUDIT_FLUSH_SECONDS <= 0 ga gasi).
+        var flushSeconds = int.TryParse(config["T08_AUDIT_FLUSH_SECONDS"], out var s) ? s : 10;
+        if (flushSeconds > 0)
+        {
+            builder.Services.AddHostedService(sp => new AuditFlushService(
+                sp.GetRequiredService<BufferedAuditSink>(), TimeSpan.FromSeconds(flushSeconds), sp.GetRequiredService<ILogger<AuditFlushService>>()));
         }
 
         builder.Services.AddSingleton(TimeProvider.System);
@@ -80,7 +90,21 @@ public static class T08Host
 
         var app = builder.Build();
 
+        // Odbačen audit događaj = audit nepotpun (В.2): log nivoa Error, bez sadržaja događaja (samo akcija, ključ, brojač).
+        var dropLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("T08.Audit");
+        app.Services.GetRequiredService<BufferedAuditSink>().OnDropped = (e, total) =>
+            dropLog.LogError("Audit događaj odbačen jer je red pun (action={Action}, key={Key}, ukupno odbačenih={Total}).",
+                e.Action, e.IdempotencyKey, total);
+
         app.MapGet("/health", () => Results.Text("OK"));
+
+        // Vidljivost audit reda (nalaz В.2): pokusa flush, pa javlja Pending/Dropped. Dropped > 0 = audit nepotpun -> 503.
+        app.MapGet("/health/audit", async (BufferedAuditSink audit, CancellationToken ct) =>
+        {
+            await audit.FlushAsync(ct);
+            var body = new { pending = audit.Pending, dropped = audit.Dropped, status = audit.Dropped > 0 ? "incomplete" : audit.Pending > 0 ? "degraded" : "ok" };
+            return audit.Dropped > 0 ? Results.Json(body, statusCode: StatusCodes.Status503ServiceUnavailable) : Results.Json(body);
+        });
         ExposureEndpoints.Map(app);
 
         return app;

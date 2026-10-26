@@ -1,7 +1,7 @@
 # T08 — Attack surface, supply chain i release trust
 
-> **Status:** `scaffold` (prazan šablon). Kada servis dobije `tests` profil koji prolazi, promenite
-> `status: active` u [`service.yaml`](service.yaml) — od tada ga CI testira na svakom PR-u.
+> **Status:** `active` ([`service.yaml`](service.yaml)) — CI testira T08 na svakom PR-u. R1-18 / UC4 (registracija, klasifikacija,
+> potvrda, zatvaranje izloženosti) je implementiran; R2-13 i R3-17 nisu. Testovi: `dotnet test tests\T08.Tests` (295/295 na `434b767`).
 > Pravila strukture i konvencija: [README u korenu repozitorijuma](../../README.md).
 
 ## Odgovornost tima
@@ -12,7 +12,7 @@ Projektne celine:
 - **R2-13** — Dependency i software supply-chain registry
 - **R3-17** — Software provenance i release trust verifikacija
 
-Tim:   ·  Stack: nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)
+Tim: 02 · Stack: .NET / C# (.NET 10), ASP.NET Core, NUnit + Moq
 
 <!-- Jednom rečenicom: šta ovaj servis radi i šta NE radi (granica odgovornosti). -->
 
@@ -97,4 +97,9 @@ Upisani su i u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
 
 ## Poznata ograničenja i residual risk
 
-<!-- Šta kontrola ne pokriva i zašto je rizik prihvatljiv ili otvoren. -->
+- Ugovori `C-ASSET-v1`, `C-ZONE-v1`, `C-AUDIT-v1` su DRAFT bez potvrde owner-a; contract testovi rade nad stubom i in-process `FakeUpstream`-om, ne nad T01/T11/T04.
+- Identitet i dozvole su dev HMAC token (`perms` claim); mapiranje SA/AN → `exposure.classify` ne postoji dok T12/T02 ne objave ugovor.
+- Audit bafer je u memoriji: događaji se gube pri restartu, a pri prekoračenju se najstariji odbacuje (`auditDelivered:false` u odgovoru).
+- Zaštita od tajni u audit-u je heuristika nad `details` (nazivi ključeva i regex), ne nad `actor`/`action`/`target`.
+- Timeout upstream-a je 5 s, bez retry-a i circuit breaker-a; 401/403 sa T01 se mapira u `UPSTREAM_UNAVAILABLE`.
+- Nije rađeno: mutaciona provera, integracija sa stvarnim servisima, Docker pokretanje.

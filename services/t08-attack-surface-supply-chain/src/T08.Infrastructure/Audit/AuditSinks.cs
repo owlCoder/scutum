@@ -45,6 +45,9 @@ public sealed class BufferedAuditSink(IAuditSink inner, int maxPending = 1000) :
     /// <summary>Broj događaja odbačenih zbog punog reda; nije nula = audit je nepotpun i operater mora da reaguje.</summary>
     public int Dropped { get; private set; }
 
+    /// <summary>Poziva se pri svakom odbacivanju (odbačen događaj, ukupno odbačenih); host ovde piše log. Ne sme da baca.</summary>
+    public Action<AuditEvent, int>? OnDropped { get; set; }
+
     public async Task<AuditWriteOutcome> RecordAsync(AuditEvent auditEvent, CancellationToken ct = default)
     {
         await FlushAsync(ct).ConfigureAwait(false);   // redosled: stariji događaji prvi
@@ -93,15 +96,20 @@ public sealed class BufferedAuditSink(IAuditSink inner, int maxPending = 1000) :
 
     private void Enqueue(AuditEvent auditEvent)
     {
+        AuditEvent? dropped = null;
+        int totalDropped;
         lock (_gate)
         {
             if (_pending.Count >= maxPending)
             {
-                _pending.Dequeue();
+                dropped = _pending.Dequeue();
                 Dropped++;
             }
 
+            totalDropped = Dropped;
             _pending.Enqueue(auditEvent);
         }
+
+        if (dropped is not null) OnDropped?.Invoke(dropped, totalDropped);   // van lock-a: callback ne sme da blokira red
     }
 }

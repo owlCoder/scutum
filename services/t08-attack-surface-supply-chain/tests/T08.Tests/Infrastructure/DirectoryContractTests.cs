@@ -208,7 +208,10 @@ public class HttpAssetReaderContractTests : AssetReaderContract
     internal override IAssetReader Build(AssetWorld world) =>
         new HttpAssetDirectory(new FakeUpstream(request => Serve(world, request)).Client());
 
-    /// <summary>Simulira T01 po C-ASSET-v1: 200 sa telom, 404 ako ne postoji, 503 ako je pao.</summary>
+    /// <summary>
+    /// Simulira T01 po C-ASSET-v1: 200 sa telom, 404 ako ne postoji, 409 ASSET_DECOMMISSIONED ako je dekomisionisan,
+    /// 503 ako je pao. <c>Inactive</c> nije u ugovoru; fake ga šalje kao 200 sa telom (tolerantan čitalac).
+    /// </summary>
     private static HttpResponseMessage Serve(AssetWorld world, HttpRequestMessage request)
     {
         if (world.Unavailable) return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
@@ -216,6 +219,12 @@ public class HttpAssetReaderContractTests : AssetReaderContract
         var id = request.RequestUri!.AbsolutePath["/api/v1/assets/".Length..];
         var asset = world.Assets.FirstOrDefault(a => a.Id == id);
         if (asset is null) return new HttpResponseMessage(HttpStatusCode.NotFound);
+        if (asset.Status == AssetStatus.Decommissioned)
+            return new HttpResponseMessage(HttpStatusCode.Conflict)
+            {
+                Content = new StringContent(
+                    """{"code":"ASSET_DECOMMISSIONED","message":"decommissioned"}""", Encoding.UTF8, "application/json")
+            };
 
         var body = JsonSerializer.Serialize(new
         {
@@ -254,7 +263,7 @@ public class HttpZoneReaderContractTests : ZoneReaderContract
     internal override IZoneReader Build(ZoneWorld world) =>
         new HttpZoneDirectory(new FakeUpstream(request => Serve(world, request)).Client());
 
-    /// <summary>Simulira T11 po C-ZONE-v1: 200 sa telom, 404 ako ne postoji, 503 ako je pao.</summary>
+    /// <summary>Simulira T11 po C-ZONE-v1: 200 sa telom, 404 ako ne postoji, 409 ZONE_INACTIVE ako je neaktivna, 503 ako je pao.</summary>
     private static HttpResponseMessage Serve(ZoneWorld world, HttpRequestMessage request)
     {
         if (world.Unavailable) return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
@@ -262,6 +271,12 @@ public class HttpZoneReaderContractTests : ZoneReaderContract
         var id = request.RequestUri!.AbsolutePath["/api/v1/zones/".Length..];
         var zone = world.Zones.FirstOrDefault(z => z.Id == id);
         if (zone is null) return new HttpResponseMessage(HttpStatusCode.NotFound);
+        if (zone.Status == ZoneStatus.Inactive)
+            return new HttpResponseMessage(HttpStatusCode.Conflict)
+            {
+                Content = new StringContent(
+                    """{"code":"ZONE_INACTIVE","message":"inactive"}""", Encoding.UTF8, "application/json")
+            };
 
         var body = JsonSerializer.Serialize(new
         {

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http.Features;
+using T08.Application.Audit;
 using T08.Application.Exposures;
 using T08.Domain.Exposures;
 using T08.Infrastructure.Security;
@@ -125,8 +126,11 @@ public static class ExposureEndpoints
         correlationId = Guid.Empty;
         failure = null;
 
-        if (!TryGetBearer(http, out var bearer) || !tokens.TryValidate(bearer, out actor))
+        // Token čiji sub liči na tajnu se ne prihvata: akter ide u audit, a AuditEvent.Create bi bacio (500) umesto 401.
+        if (!TryGetBearer(http, out var bearer) || !tokens.TryValidate(bearer, out actor)
+            || AuditEvent.LooksLikeSecret(actor!.ActorId))
         {
+            actor = null;
             http.Response.Headers.WWWAuthenticate = "Bearer";
             failure = Error("UNAUTHENTICATED");
             return false;

@@ -22,7 +22,7 @@ flowchart LR
 
 | Entitet | Ključna polja | Vlasnik / napomena |
 | --- | --- | --- |
-| `Exposure` | `id`, `assetId`, `zoneId`, `ownerId`, `endpoint` (domen/adresa), `port`, `protocol`, `purpose`, `justification`, `classification`, `status`, `lastConfirmedAt`, `nextReviewDue`, `expiresAt?`, `closedAt?`, `closeReason?` | `ownerId` = vlasnik exposure-a (identitet iz T12); mora postojati |
+| `Exposure` | Implementirano: `id`, `assetId`, `zoneId`, `ownerId`, `scope`, `justification`, `classification`, `status`, `lastConfirmedAt?`, `expiresAt?`, `closedAt?`, `closeReason?`, `version`. **Planirano, još nije u kodu:** `endpoint` (domen/adresa), `port`, `protocol`, `purpose`, `nextReviewDue` | `ownerId` = vlasnik exposure-a (identitet iz T12); mora postojati. `scope` se preuzima iz asset-a pri registraciji; `version` služi za optimistic concurrency (SEC-CONV-09) |
 | `Classification` | `Approved`, `Temporary`, `Unknown` | `Unknown` znači **za proveru**, nikad „ranjivost" ni „bezbedno" |
 | `ExposureStatus` | `Active`, `Closed` | `Closed` je terminalno, ostaje u istoriji |
 

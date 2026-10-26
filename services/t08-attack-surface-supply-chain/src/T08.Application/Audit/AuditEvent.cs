@@ -50,6 +50,9 @@ public sealed record AuditEvent
     /// <summary>Ključ za idempotenciju iz C-AUDIT-v1: correlationId + action + target + occurredAt.</summary>
     public string IdempotencyKey => $"{CorrelationId:N}|{Action}|{Target}|{OccurredAt.UtcTicks}";
 
+    /// <summary>Isto pravilo kao u <see cref="Create"/>: da li vrednost liči na tajnu (JWT, Bearer, privatni ključ, <c>password=…</c>).</summary>
+    public static bool LooksLikeSecret(string value) => SecretLikeValue.IsMatch(value);
+
     public static AuditEvent Create(DateTimeOffset occurredAt, string actor, string action, string target,
         AuditOutcome outcome, Guid correlationId, AuditSensitivity sensitivity,
         IReadOnlyDictionary<string, string>? details = null)
@@ -57,6 +60,9 @@ public sealed record AuditEvent
         Require(actor, nameof(actor));
         Require(action, nameof(action));
         Require(target, nameof(target));
+        foreach (var (name, value) in new[] { (nameof(actor), actor), (nameof(action), action), (nameof(target), target) })
+            if (SecretLikeValue.IsMatch(value))
+                throw new ArgumentException($"Polje '{name}' liči na tajnu.", name);
         if (correlationId == Guid.Empty) throw new ArgumentException("correlationId je obavezan.", nameof(correlationId));
         if (!Enum.IsDefined(outcome)) throw new ArgumentOutOfRangeException(nameof(outcome));
         if (!Enum.IsDefined(sensitivity)) throw new ArgumentOutOfRangeException(nameof(sensitivity));

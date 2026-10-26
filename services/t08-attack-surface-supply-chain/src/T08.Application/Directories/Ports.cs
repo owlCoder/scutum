@@ -2,7 +2,7 @@ namespace T08.Application.Directories;
 
 public enum AssetCriticality { Low, Medium, High, Critical }
 
-/// <summary>T01 razlikuje Inactive i Decommissioned; za T08 oba znače „ne vezuj novo“.</summary>
+/// <summary>Ugovor C-ASSET-v1 ima samo Active i Decommissioned; Inactive se samo tolerise (nije u ugovoru, nema dokaza da ga T01 salje); za T08 su svi ne-Active statusi isto: svi znače „ne vezuj novo“.</summary>
 public enum AssetStatus { Active, Inactive, Decommissioned }
 
 /// <summary>Asset kako ga vidi T08 (C-ASSET-v1). Referenca, ne kopija: čita se pri svakoj odluci.</summary>

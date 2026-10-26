@@ -39,6 +39,26 @@ public class AuditEventTests
     public void Secret_like_detail_values_are_rejected_even_under_a_harmless_key(string value) =>
         Assert.Throws<ArgumentException>(() => Make(details: new Dictionary<string, string> { ["note"] = value }));
 
+    private const string Jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyLTEifQ.c2lnbmF0dXJl";
+
+    [TestCase("actor", Jwt)]
+    [TestCase("actor", "Bearer abcdef0123456789")]
+    [TestCase("action", "password=hunter2")]
+    [TestCase("action", "-----BEGIN PRIVATE KEY-----")]
+    [TestCase("target", "exposure:api_key: sk-123")]
+    [TestCase("target", Jwt)]
+    public void Secret_like_actor_action_and_target_are_rejected(string field, string value)
+    {
+        var actor = field == "actor" ? value : "user-1";
+        var action = field == "action" ? value : "exposure.registered";
+        var target = field == "target" ? value : "exposure:e-1";
+
+        var ex = Assert.Throws<ArgumentException>(() =>
+            AuditEvent.Create(Now, actor, action, target, AuditOutcome.Success, Corr, AuditSensitivity.Low));
+
+        Assert.That(ex!.ParamName, Is.EqualTo(field));
+    }
+
     [TestCase("asset-1")]
     [TestCase("Unknown")]
     [TestCase("decommissioned")]
