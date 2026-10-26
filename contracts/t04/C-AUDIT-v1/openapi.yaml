@@ -1,0 +1,60 @@
+openapi: 3.0.3
+info:
+  title: C-AUDIT-v1
+  version: "1.0.0"
+  description: Upis audit događaja (R1-09, T04). Stanje (DRAFT/ACCEPTED/...) vodi se u README.md i REGISTRY.md.
+paths:
+  /api/v1/events:
+    post:
+      operationId: recordEvent
+      parameters:
+        - name: X-Correlation-Id
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AuditEvent" }
+      responses:
+        "202":
+          description: Događaj prihvaćen (ponovljen isti događaj se ne duplira)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Accepted" }
+        "400":
+          description: Događaj ne zadovoljava šemu
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: T04 privremeno nedostupan; producer ne sme da izgubi događaj bez traga
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+components:
+  schemas:
+    AuditEvent:
+      type: object
+      required: [occurredAt, actor, action, target, outcome, correlationId, sensitivity]
+      properties:
+        occurredAt: { type: string, format: date-time }
+        actor: { type: string, description: "Identitet korisnika ili servisa" }
+        action: { type: string, example: exposure.classification.changed }
+        target: { type: string, example: "exposure:exp-001" }
+        outcome: { type: string, enum: [Success, Failure] }
+        correlationId: { type: string, format: uuid }
+        sensitivity: { type: string, enum: [Low, Medium, High] }
+        details: { type: object, additionalProperties: { type: string }, description: "Max 2 KB; bez tajni (SEC-CONV-05)" }
+    Accepted:
+      type: object
+      required: [eventId]
+      properties:
+        eventId: { type: string }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, enum: [INVALID_EVENT, UPSTREAM_UNAVAILABLE] }   # SEC-CONV-03
+        message: { type: string }
