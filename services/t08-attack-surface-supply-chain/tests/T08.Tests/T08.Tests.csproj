@@ -24,6 +24,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\T08.Domain\T08.Domain.csproj" />
     <ProjectReference Include="..\..\src\T08.Application\T08.Application.csproj" />
+    <ProjectReference Include="..\..\src\T08.Infrastructure\T08.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\T08.Api\T08.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
 </Project>

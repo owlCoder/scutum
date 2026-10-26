@@ -1,0 +1,56 @@
+openapi: 3.0.3
+info:
+  title: C-ASSET-v1
+  version: "1.0.0"
+  description: Asset po ID-ju (R1-02, T01). Stanje (DRAFT/ACCEPTED/...) vodi se u README.md i REGISTRY.md.
+paths:
+  /api/v1/assets/{assetId}:
+    get:
+      operationId: getAsset
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema: { type: string, pattern: "^[a-z][a-z0-9-]{0,63}$" }   # SEC-CONV-01
+        - name: X-Correlation-Id
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Asset je aktivan i vidljiv pozivaocu
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Asset" }
+        "404":
+          description: Ne postoji ili nije u scope-u pozivaoca (isti odgovor)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Asset je dekomisionisan; nova veza sa njim se odbija
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: T01 privremeno nedostupan; consumer ne sme da tumači kao prazan uspeh
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+components:
+  schemas:
+    Asset:
+      type: object
+      required: [id, ownerId, criticality, status, scope]
+      properties:
+        id: { type: string }
+        ownerId: { type: string, description: "Identitet vlasnika (R1-03, T12)" }
+        criticality: { type: string, enum: [Low, Medium, High, Critical] }
+        status: { type: string, enum: [Active, Decommissioned] }
+        scope: { type: string, description: "Security domen/scope asset-a" }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, enum: [ASSET_NOT_FOUND, ASSET_DECOMMISSIONED, UPSTREAM_UNAVAILABLE] }   # SEC-CONV-03
+        message: { type: string }

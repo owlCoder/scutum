@@ -1,0 +1,55 @@
+openapi: 3.0.3
+info:
+  title: C-ZONE-v1
+  version: "1.0.0"
+  description: Security zona po ID-ju (R1-14, T11). Stanje (DRAFT/ACCEPTED/...) vodi se u README.md i REGISTRY.md.
+paths:
+  /api/v1/zones/{zoneId}:
+    get:
+      operationId: getZone
+      parameters:
+        - name: zoneId
+          in: path
+          required: true
+          schema: { type: string, pattern: "^[a-z][a-z0-9-]{0,63}$" }   # SEC-CONV-01
+        - name: X-Correlation-Id
+          in: header
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: Zona je aktivna i vidljiva pozivaocu
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Zone" }
+        "404":
+          description: Ne postoji ili nije u scope-u pozivaoca (isti odgovor)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: Zona je neaktivna; nova veza se odbija
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "503":
+          description: T11 privremeno nedostupan; consumer ne sme da tumači kao prazan uspeh
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+components:
+  schemas:
+    Zone:
+      type: object
+      required: [id, ownerId, trustLevel, status]
+      properties:
+        id: { type: string }
+        ownerId: { type: string, description: "Identitet vlasnika zone (R1-03, T12)" }
+        trustLevel: { type: string, enum: [Internal, Dmz, External] }
+        status: { type: string, enum: [Active, Inactive] }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, enum: [ZONE_NOT_FOUND, ZONE_INACTIVE, UPSTREAM_UNAVAILABLE] }   # SEC-CONV-03
+        message: { type: string }

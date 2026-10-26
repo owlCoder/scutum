@@ -1,7 +1,6 @@
 # T01 — Asset-i, ranjivosti i procena rizika
 
-> **Status:** `scaffold` (prazan šablon). Kada servis dobije `tests` profil koji prolazi, promenite
-> `status: active` u [`service.yaml`](service.yaml) — od tada ga CI testira na svakom PR-u.
+> **Status:** `active` — CI pokreće testove servisa (`tests` profil, NUnit) na svakom PR-u.
 > Pravila strukture i konvencija: [README u korenu repozitorijuma](../../README.md).
 
 ## Odgovornost tima
@@ -12,9 +11,22 @@ Projektne celine:
 - **R2-11** — Vulnerability registry i remediation
 - **R3-03** — Risk register i procena bezbednosnog rizika
 
-Tim:   ·  Stack: nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)
+Tim: 6  ·  Stack: .NET 8 / ASP.NET Core / MySQL 8.4 / NUnit
 
-<!-- Jednom rečenicom: šta ovaj servis radi i šta NE radi (granica odgovornosti). -->
+T01 vodi inventar asset-a sa kritičnošću i vlasnikom, registar ranjivosti sa remediation tokom
+i registar rizika; ne upravlja identitetima, domenima, dozvolama ni audit skladištem — to dobija
+od T12, T11, T02 i T04 preko ugovora.
+
+Struktura (Clean Architecture, zavisnosti samo ka unutra: Api → Infrastructure → Application → Domain):
+
+```
+Scutum.T01.sln
+src/Scutum.T01.Domain          entiteti, statusi, invarijante (ne zavisi ni od čega)
+src/Scutum.T01.Application     use-case-ovi i portovi
+src/Scutum.T01.Infrastructure  persistence, klijenti drugih timova
+src/Scutum.T01.Api             ASP.NET Core minimal API (/health)
+tests/Scutum.T01.Tests         NUnit testovi
+```
 
 ## Pokretanje
 
@@ -48,21 +60,41 @@ repozitorijuma](../../README.md#preduslovi-i-brzi-početak-prvi-put-na-računaru
 | Baza (samo za vaš alat) | `127.0.0.1:3401` |
 | Konfiguracija | `.env` (iz `.env.example`), bez tajni u repozitorijumu |
 
-Migracije, seed/demo podaci i potrebne promenljive okruženja: <!-- opisati gde su i kako se pokreću (SEC-OPS-02, SEC-OPS-03) -->
+Lokalno bez Docker-a (iz `services/t01-assets-risk/`, potreban .NET 8 SDK; `global.json` zaključava SDK na 8):
+
+```bash
+dotnet build
+dotnet test
+```
+
+Migracije, seed/demo podaci i potrebne promenljive okruženja: stižu u KT2 (SEC-OPS-02, SEC-OPS-03).
+Do tada servis ne koristi bazu; promenljive su u `.env.example`.
 
 ## Zavisnosti od drugih timova
 
+Dok upstream servis ne postoji, koristimo stub sa normalnim i failure odgovorom; stub ne sadrži
+security logiku drugog tima (SEC-DEP-01..05). Endpoint-i posle reči „Očekujemo“ su naš predlog minimalnog ugovora (DRAFT) dok upstream tim ne objavi svoj.
+
 | Servis / ugovor | Owner | Kako ga koristimo | Stub u razvoju |
 | --- | --- | --- | --- |
-| <!-- npr. C-AUDIT-v1 --> | <!-- T04 --> | <!-- env varijabla, endpoint --> | <!-- da / ne --> |
+| R1-01 domeni (`T11_BASE_URL`) | T11 | R1-02 registracija: domen mora postojati i biti aktivan. Očekujemo `GET /api/v1/domains/{id}` → `{id, organizationId, status: Active\|Inactive}`, 404 ako ne postoji | da |
+| R1-03 identiteti (`T12_BASE_URL`) | T12 | vlasnik asset-a (R1-02), remediation owner (R2-11), acceptedBy (R3-03). Očekujemo `GET /api/v1/identities/{id}` → `{id, status}`, 404 ako ne postoji | da |
+| R1-05 dozvole | T02 | dozvole subjekta u domenu (`asset.write`, `finding.close`, `risk.accept`…) iz claim-ova JWT-a ili `GET /api/v1/subjects/{id}/permissions?domainId=` | da (test JWT) |
+| R1-09 audit (`T04_BASE_URL`) | T04 | sve izmene u T01 šalju audit događaj sa poljima iz SEC-CONV-04. Očekujemo `POST /api/v1/events` | da (`InMemoryAuditSink`) |
+| R1-16 katalog kontrola (`T05_BASE_URL`) | T05 | R3-03 povezivanje kontrole sa rizikom. Očekujemo `GET /api/v1/controls/{id}` → `{id, name, status}` | da |
+| R1-12 simulatori | nema vlasnika, pravi T01 | R2-11 uvoz simuliranih nalaza iz `sim/findings.json` | sopstveni simulator |
 
 ## Ugovori koje ovaj servis nudi
 
-Upisani su i u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
+Nijedan ugovor T01 još nije objavljen u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
+Formalni DRAFT `C-ASSET-v1` (`contracts/t01/C-ASSET-v1/` + red u registru) stiže u posebnom PR-u.
+Do tada consumer timovi ovu tabelu ne tretiraju kao dogovoren ugovor.
 
-| Ugovor | Stanje | Consumeri |
+| Ugovor | Stanje | Planirani consumeri |
 | --- | --- | --- |
-| <!-- npr. C-TELEMETRY-v1 --> | <!-- DRAFT --> | <!-- T07, T04 --> |
+| `C-ASSET-v1`: asset po ID-ju i pretraga po domenu/vlasniku | planiran, nije objavljen (DRAFT u posebnom PR-u) | T03 (R1-06), T08 (R1-18, R2-13, R3-17), T11 (R1-14), T15 (R1-10, R2-20), T28 (R2-09), T30 (R2-16) |
+| `C-FINDING-v1`: nalazi iz R2-11 | planiran, nije objavljen (posle KT2) | T08 (R2-13, R3-17) |
+| `C-RISK-v1`: rizici iz R3-03 | planiran, nije objavljen (posle KT2) | T14 (R3-08), T26 (R3-23) |
 
 ## Trust granica i bezbednost
 
