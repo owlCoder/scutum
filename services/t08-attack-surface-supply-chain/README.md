@@ -90,6 +90,8 @@ Upisani su i u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
 ## Trust granica i bezbednost
 
 - Threat model: [`docs/threat-model.md`](docs/threat-model.md)
+- Domen model: [`docs/domain-model.md`](docs/domain-model.md)
+- Security matrica: [`docs/security-matrix.md`](docs/security-matrix.md)
 - Odluke (ADR): [`docs/adr/`](../../docs/adr/) — fajlovi sa prefiksom `t08-`
 - Demo scenario (normalan i negativan): [`docs/demo.md`](docs/demo.md)
 
