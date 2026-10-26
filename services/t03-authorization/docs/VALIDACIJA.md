@@ -1,4 +1,4 @@
-# T03 — evidencija validacije
+﻿# T03 — evidencija validacije
 
 ## Potvrđen GitHub Actions rezultat za 3c00d0f
 
@@ -56,8 +56,7 @@ Proveriti da `t03-tests` prijavi 14/14 NUnit slučajeva i demo 2/2, a
 
 Posle push-a u istu granu `fix/t03-clean`, PR #12 treba da dobije novi Actions
 run. Potrebni su uspešni structure, secrets, selftest (scripts), tests (t03) i
-ci-ok, uz novi artefakt `test-results-t03`. Novi rezultat još nije potvrđen;
-dopuniti ovu evidenciju i PR opis direktnim linkovima na novi run/artefakt.
+ci-ok, uz novi artefakt `test-results-t03`. GitHub Actions potvrda za `3d2c59a` navedena je u dopuni ispod.
 
 ## Obuhvat
 
@@ -75,4 +74,5 @@ Posle primene outage ispravke uspešno je izvršen scripts/scutum.sh test t03:
 
 Prvi pokušaj je prekinut zbog zaključanog Compose metadata fajla.
 Ponovljeno pokretanje je uspelo, uz COMPOSE_BAKE=false u terminalu.
-Novi GitHub Actions rezultat za ovu ispravku još treba potvrditi.
+GitHub Actions za commit `3d2c59a` je uspešan: [Actions run](https://github.com/owlCoder/scutum/actions/runs/40320404541), [test-results-t03](https://github.com/owlCoder/scutum/actions/runs/40320404541/artifacts/12648073419). Structure, secrets, selftest, tests (t03) i ci-ok su prošli.
+
