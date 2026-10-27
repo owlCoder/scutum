@@ -34,6 +34,10 @@ Polja i pravila u nastavku predstavljaju domenski model T01.
 | Status | LifecycleStatus | Početni status je Active. |
 | CreatedAt | DateTimeOffset | Vreme registracije; ne menja se. |
 | UpdatedAt | DateTimeOffset | Vreme poslednje uspešne izmene; pri registraciji jednako CreatedAt. |
+| Version | int | Verzija zapisa za detekciju konkurentnih izmena (SEC-CONV-09). |
+
+Polje Version predviđeno je za objedinjeni model; provera konkurentnih
+izmena nije odgovornost metode CanTransition.
 
 AssetId, DomainId, IdentityId i Criticality pripadaju zajedničkim
 domenskim tipovima unutar T01 servisa.
