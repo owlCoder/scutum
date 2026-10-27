@@ -4,9 +4,9 @@ slug: incident-response
 title: "Incidenti, istrage, response"
 components: "R2-09, R2-10, R3-06"
 team: ""                 # broj vašeg tima
-stack: "nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)"
+stack: ".NET 8 / ASP.NET Core / MySQL 8.4 / NUnit"
 # scaffold = prazan šablon, CI preskače testove; active = servis ima 'tests' profil i CI ga pokreće
-status: scaffold
+status: active
 # Portovi se NE menjaju (formula: api 8000+NN, ui 8100+NN, db 3400+NN)
 api_port: 8028
 ui_port: 8128

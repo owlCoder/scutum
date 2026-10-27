@@ -1,7 +1,6 @@
 # T28 — Incidenti, istrage, response
 
-> **Status:** `scaffold` (prazan šablon). Kada servis dobije `tests` profil koji prolazi, promenite
-> `status: active` u [`service.yaml`](service.yaml) — od tada ga CI testira na svakom PR-u.
+> **Status:** `active` — CI pokreće testove servisa (`tests` profil, NUnit) na svakom PR-u.
 > Pravila strukture i konvencija: [README u korenu repozitorijuma](../../README.md).
 
 ## Odgovornost tima
@@ -12,20 +11,30 @@ Projektne celine:
 - **R2-10** — Investigation, evidence i timeline
 - **R3-06** — Automatizacija containment i response akcija
 
-Tim:   ·  Stack: nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)
+Tim:   ·  Stack: .NET 8 / ASP.NET Core / MySQL 8.4 / NUnit
 
-<!-- Jednom rečenicom: šta ovaj servis radi i šta NE radi (granica odgovornosti). -->
+Početni skelet servisa: sluša na 8080 i odgovara `OK` na `GET /health`. Use-case-ovi celina
+još nisu implementirani — ostavljeni su prazni Clean Architecture slojevi za dalji rad.
+
+```
+Scutum.T28.sln
+src/Scutum.T28.Domain
+src/Scutum.T28.Application
+src/Scutum.T28.Infrastructure
+src/Scutum.T28.Api             /health
+tests/Scutum.T28.Tests
+```
 
 ## Pokretanje
 
 Linux / WSL / Git Bash:
 
 ```bash
-bash scripts/scutum.sh network      # jednom po računaru
-bash scripts/scutum.sh up t28          # api + baza
-curl http://localhost:8028/health  # očekivano: OK
-bash scripts/scutum.sh test t28        # isto što radi CI
-bash scripts/scutum.sh down t28        # dodajte --volumes da obrišete podatke baze
+bash scripts/scutum.sh network
+bash scripts/scutum.sh up t28
+curl http://localhost:8028/health
+bash scripts/scutum.sh test t28
+bash scripts/scutum.sh down t28
 ```
 
 Windows PowerShell / Command Prompt:
@@ -48,7 +57,15 @@ repozitorijuma](../../README.md#preduslovi-i-brzi-početak-prvi-put-na-računaru
 | Baza (samo za vaš alat) | `127.0.0.1:3428` |
 | Konfiguracija | `.env` (iz `.env.example`), bez tajni u repozitorijumu |
 
-Migracije, seed/demo podaci i potrebne promenljive okruženja: <!-- opisati gde su i kako se pokreću (SEC-OPS-02, SEC-OPS-03) -->
+Lokalno bez Docker-a (iz `services/t28-incident-response/`, potreban .NET 8 SDK):
+
+```bash
+dotnet build
+dotnet test
+```
+
+Migracije, seed/demo podaci i potrebne promenljive okruženja: stižu kasnije (SEC-OPS-02, SEC-OPS-03).
+Do tada servis ne koristi bazu.
 
 ## Zavisnosti od drugih timova
 
@@ -62,7 +79,7 @@ Upisani su i u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
 
 | Ugovor | Stanje | Consumeri |
 | --- | --- | --- |
-| <!-- npr. C-TELEMETRY-v1 --> | <!-- DRAFT --> | <!-- T07, T04 --> |
+| <!-- npr. C-INCIDENT-v1 --> | <!-- DRAFT --> | <!-- T07, T04 --> |
 
 ## Trust granica i bezbednost
 
@@ -72,4 +89,4 @@ Upisani su i u [`contracts/REGISTRY.md`](../../contracts/REGISTRY.md).
 
 ## Poznata ograničenja i residual risk
 
-<!-- Šta kontrola ne pokriva i zašto je rizik prihvatljiv ili otvoren. -->
+Skelet izlaže samo `GET /health`. Incident, evidence i response još nisu implementirani.

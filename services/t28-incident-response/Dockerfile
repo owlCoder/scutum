@@ -1,13 +1,18 @@
-# PLACEHOLDER — zamenite ga Dockerfile-om vašeg servisa (npr. višefazni build za .NET / Node / Java / Python).
-# Konvencije koje treba zadržati:
-#   * stage 'runtime' = servis koji sluša na portu 8080 i odgovara na GET /health
-#   * stage 'test'    = pokreće sve testove i vraća exit kod != 0 kada neki padne (koristi ga profil 'tests')
-#     i rezultate (npr. .trx / JUnit XML) piše u /results — CI ih čuva kao dokaz (services/<tNN>-*/TestResults)
+# T28 — višefazni build. Stage 'test' koristi profil 'tests' (CI), stage 'runtime' koristi compose.
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet restore Scutum.T28.sln
+RUN dotnet publish src/Scutum.T28.Api/Scutum.T28.Api.csproj -c Release -o /app --no-restore
 
-FROM busybox:1.36 AS test
-CMD ["sh", "-c", "echo 'SCAFFOLD: dodajte testove i zamenite ovaj stage' && exit 1"]
+FROM build AS test
+ENTRYPOINT ["dotnet", "test", "Scutum.T28.sln", "-c", "Release", "--logger", "trx;LogFileName=t28.trx", "--results-directory", "/results"]
 
-FROM busybox:1.36 AS runtime
-RUN mkdir /www && echo OK > /www/health
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /app .
+ENV ASPNETCORE_HTTP_PORTS=8080
 EXPOSE 8080
-CMD ["httpd", "-f", "-p", "8080", "-h", "/www"]
+# servis ne radi kao root (least privilege)
+USER app
+ENTRYPOINT ["dotnet", "Scutum.T28.Api.dll"]
