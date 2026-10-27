@@ -22,4 +22,4 @@ WORKDIR /src
 COPY . .
 RUN dotnet restore ./tests/t12-tests.csproj
 RUN dotnet build ./tests/t12-tests.csproj -c Release --no-restore
-ENTRYPOINT ["dotnet", "test", "./t12-tests/t12-tests.csproj", "-c", "Release", "--no-build", "--logger", "trx;LogFileName=t12-tests.trx", "--results-directory", "/results"]
+ENTRYPOINT ["dotnet", "test", "./tests/t12-tests.csproj", "-c", "Release", "--no-build", "--logger", "trx;LogFileName=t12-tests.trx", "--results-directory", "/results"]
