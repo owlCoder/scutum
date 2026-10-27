@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY . .
 RUN dotnet restore ./src/IdentityAuthnApi/IdentityAuthnApi.csproj
@@ -7,7 +7,7 @@ RUN dotnet publish ./src/IdentityAuthnApi/IdentityAuthnApi.csproj \
     -o /app/publish \
     --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
@@ -17,7 +17,7 @@ EXPOSE 8080
 COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "IdentityAuthnApi.dll"]
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS test
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS test
 WORKDIR /src
 COPY . .
 RUN dotnet restore ./t12-tests/t12-tests.csproj
