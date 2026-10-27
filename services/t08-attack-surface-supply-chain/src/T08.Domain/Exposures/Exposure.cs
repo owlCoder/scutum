@@ -17,6 +17,10 @@ public static class ExposureErrorCodes
     public const string InvalidClassification = "INVALID_CLASSIFICATION";
     public const string InvalidExpiry = "INVALID_EXPIRY";
     public const string InvalidExposure = "INVALID_EXPOSURE";
+    public const string InvalidEndpoint = "INVALID_ENDPOINT";
+    public const string InvalidPort = "INVALID_PORT";
+    public const string InvalidProtocol = "INVALID_PROTOCOL";
+    public const string InvalidPurpose = "INVALID_PURPOSE";
 }
 
 /// <summary>
@@ -39,6 +43,8 @@ public sealed class Exposure
     public string? CloseReason { get; private set; }
     /// <summary>Poslednja potvrda da je izloženost i dalje potrebna (periodični pregled); null dok nije potvrđena.</summary>
     public DateTimeOffset? LastConfirmedAt { get; private set; }
+    /// <summary>Opis spoljne izloženosti (UC3). Null dok nije evidentiran.</summary>
+    public ExposureSurface? Surface { get; private set; }
     /// <summary>Raste pri svakoj izmeni; koristi se za optimistic concurrency (SEC-CONV-09).</summary>
     public int Version { get; private set; } = 1;
 
@@ -80,6 +86,21 @@ public sealed class Exposure
 
         Classification = target;
         ExpiresAt = expiresAt;
+        Version++;
+        return true;
+    }
+
+    /// <summary>
+    /// UC3: evidentira endpoint, port, protokol i namenu. Zatvoren exposure se ne menja.
+    /// Vraća false ako je opis isti kao postojeći (idempotentno, verzija se ne diže).
+    /// </summary>
+    public bool DescribeSurface(ExposureSurface surface)
+    {
+        ArgumentNullException.ThrowIfNull(surface);
+        if (Status == ExposureStatus.Closed) throw new DomainRuleException(ExposureErrorCodes.ExposureClosed);
+        if (surface.Equals(Surface)) return false;
+
+        Surface = surface;
         Version++;
         return true;
     }
