@@ -3,10 +3,10 @@ id: T03
 slug: authorization
 title: "Object-level i API autorizacija i policy engine"
 components: "R1-06, R2-12, R3-01"
-team: ""                 # broj vašeg tima
-stack: "nije odabran (specifikacija preporučuje .NET / C#; drugi stack uz odobrenje nastavnog tima)"
+team: "T03"                 # broj vašeg tima
+stack: ".NET 8 / C# / NUnit"
 # scaffold = prazan šablon, CI preskače testove; active = servis ima 'tests' profil i CI ga pokreće
-status: scaffold
+status: active
 # Portovi se NE menjaju (formula: api 8000+NN, ui 8100+NN, db 3400+NN)
 api_port: 8003
 ui_port: 8103
