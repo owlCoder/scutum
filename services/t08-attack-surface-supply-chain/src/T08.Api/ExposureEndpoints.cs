@@ -15,6 +15,7 @@ public static class ExposureEndpoints
     private sealed record ClassifyRequest(string? Classification, DateTimeOffset? ExpiresAt);
     private sealed record RegisterRequest(string? AssetId, string? ZoneId, string? Justification);
     private sealed record CloseRequest(string? ReasonCode);
+    private sealed record SurfaceRequest(string? Endpoint, int? Port, string? Protocol, string? Purpose);
 
     /// <summary>Stabilni kodovi greške (SEC-CONV-03) → HTTP status. Nepoznat kod nikad ne postaje uspeh: 500.</summary>
     private static readonly Dictionary<string, int> StatusByCode = new()
@@ -30,6 +31,10 @@ public static class ExposureEndpoints
         [ExposureErrorCodes.InvalidClassification] = StatusCodes.Status400BadRequest,
         [ExposureErrorCodes.InvalidExpiry] = StatusCodes.Status400BadRequest,
         [ExposureErrorCodes.InvalidExposure] = StatusCodes.Status400BadRequest,
+        [ExposureErrorCodes.InvalidEndpoint] = StatusCodes.Status400BadRequest,
+        [ExposureErrorCodes.InvalidPort] = StatusCodes.Status400BadRequest,
+        [ExposureErrorCodes.InvalidProtocol] = StatusCodes.Status400BadRequest,
+        [ExposureErrorCodes.InvalidPurpose] = StatusCodes.Status400BadRequest,
         ["INVALID_REQUEST"] = StatusCodes.Status400BadRequest,
         ["INVALID_CORRELATION_ID"] = StatusCodes.Status400BadRequest,
         ["UNAUTHENTICATED"] = StatusCodes.Status401Unauthorized
@@ -41,6 +46,26 @@ public static class ExposureEndpoints
         app.MapPost("/api/v1/exposures/{id}/classification", ClassifyAsync);
         app.MapPost("/api/v1/exposures/{id}/confirmation", ConfirmAsync);
         app.MapPost("/api/v1/exposures/{id}/closure", CloseAsync);
+        app.MapPost("/api/v1/exposures/{id}/surface", DescribeSurfaceAsync);
+    }
+
+        /// <summary>UC3: opis izloženosti. Identitet i scope dolaze iz tokena; telo nosi samo opis (endpoint, port, protokol, namena).</summary>
+    private static async Task<IResult> DescribeSurfaceAsync(
+        string id, HttpContext http, DevActorTokens tokens, DescribeExposureSurfaceHandler handler)
+    {
+        if (!TryAuthenticate(http, tokens, out var actor, out var correlationId, out var failure)) return failure!;
+
+        var (body, bodyError) = await ReadBodyAsync<SurfaceRequest>(http).ConfigureAwait(false);
+        if (body is null) return bodyError!;
+
+        var result = await handler.HandleAsync(
+            actor!,
+            new DescribeSurfaceCommand(id, body.Endpoint ?? "", body.Port ?? 0, body.Protocol ?? "", body.Purpose ?? "", correlationId),
+            http.RequestAborted).ConfigureAwait(false);
+
+        return result.Succeeded
+            ? Results.Json(new { changed = result.Changed, auditDelivered = result.AuditDelivered })
+            : Error(result.ErrorCode!);
     }
 
     private static async Task<IResult> RegisterAsync(

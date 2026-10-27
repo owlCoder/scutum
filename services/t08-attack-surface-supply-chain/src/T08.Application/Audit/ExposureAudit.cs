@@ -13,6 +13,7 @@ public static class ExposureAudit
     public const string Confirmed = "exposure.confirmed";
     public const string Closed = "exposure.closed";
     /// <summary>Promena izloženosti asset-a Critical/High; piše se uz događaj konkretne promene (npr. klasifikacije).</summary>
+    public const string SurfaceDescribed = "exposure.surface.described";
     public const string CriticalExposureChanged = "exposure.critical.changed";
     public const string AccessDenied = "exposure.access.denied";
 
@@ -50,6 +51,13 @@ public static class ExposureAudit
         return AuditEvent.Create(at, actor, ClassificationChanged, Target(exposureId), AuditOutcome.Success, correlationId,
             SensitivityFor(criticality), details);
     }
+
+    /// <summary>UC3: evidentiran opis izloženosti. Endpoint, port i namena se NE upisuju (samo identifikatori).</summary>
+    public static AuditEvent SurfaceWasDescribed(DateTimeOffset at, string actor, Guid correlationId,
+        string exposureId, string assetId, AssetCriticality criticality) =>
+        AuditEvent.Create(at, actor, SurfaceDescribed, Target(exposureId), AuditOutcome.Success, correlationId,
+            SensitivityFor(criticality),
+            new Dictionary<string, string> { ["assetId"] = assetId });
 
     /// <summary>Potvrda da je izloženost i dalje potrebna (periodični pregled). Nosi samo identifikatore.</summary>
     public static AuditEvent ExposureConfirmed(DateTimeOffset at, string actor, Guid correlationId,

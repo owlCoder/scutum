@@ -83,6 +83,7 @@ public static class T08Host
             sp.GetRequiredService<IExposureRepository>(), sp.GetRequiredService<IAssetReader>(), sp.GetRequiredService<IZoneReader>(),
             sp.GetRequiredService<IAuditSink>(), sp.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton<ConfirmExposureHandler>();
+        builder.Services.AddSingleton<DescribeExposureSurfaceHandler>();
         builder.Services.AddSingleton<CloseExposureHandler>();
 
         // Razvojni identitet dok T12/T02 nemaju ugovor. Bez ključa (>= 32 bajta) svaki zahtev je 401.
