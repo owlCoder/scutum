@@ -24,4 +24,4 @@ flowchart TB
 
 Reference contracts include `IIdentityContext`, `IAccessDecision`, `ILabDefinitionReader`, `IAttemptStore`, `ILabEvaluator`, `IAuditWriter`, and optionally `IExecutionGateway`.
 
-Each project component requires its own architecture diagram using the [component template](templates/PROJEKTNA_CELINA.md).
+Each project component requires its own architecture diagram using the [component template](templates/PROJECT_COMPONENT.md).

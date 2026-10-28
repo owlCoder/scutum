@@ -9,4 +9,4 @@ Components and requirements are defined by the Security Lab project specificatio
 | … |  |  |  |
 | Team 32 |  |  |  |
 
-Each student documents their component using the [component template](templates/PROJEKTNA_CELINA.md). Refer to the stable requirement IDs in the specification, such as `IDN-01`, `ACC-04`, `LAB-01`, `ATT-03`, and `EVAL-02`, without changing their meaning.
+Each student documents their component using the [component template](templates/PROJECT_COMPONENT.md). Refer to the stable requirement IDs in the specification, such as `IDN-01`, `ACC-04`, `LAB-01`, `ATT-03`, and `EVAL-02`, without changing their meaning.
