@@ -25,12 +25,6 @@ The optional local PostgreSQL service can be started with Docker Compose after c
 - `docs/ARHITEKTURA.md` — conceptual architecture and module boundaries.
 - `docs/TOK_PODATAKA.md` — platform-level data flow example.
 - `docs/PROJEKTNE_CELINE.md` — project component assignments.
-- `docs/KT1.md` and `docs/KT2.md` — checkpoint requirements.
 - `docs/templates/PROJEKTNA_CELINA.md` — component documentation template.
-
-## Course checkpoints
-
-- **KT1 (exercise 4):** initial implementation, component architecture and data flow diagrams, evidence of individual contribution, and a short demonstration.
-- **KT2 (exercise 8):** completed and tested assigned component, integrations, documentation, and final demonstration.
 
 See the course specification for the full requirements. Use short-lived branches and pull requests for changes; keep credentials and other secrets out of the repository.
