@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\Scutum.T01.Application\Scutum.T01.Application.csproj" />
-  </ItemGroup>
-
-</Project>

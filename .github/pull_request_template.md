@@ -1,24 +1,15 @@
-## Sažetak
+## Projektna celina / ID zahteva
 
-<!-- Šta se menja i kojoj projektnoj celini pripada? -->
+- ID celine:
+- ID zahteva iz nove specifikacije:
+- Autor(i):
 
-## Tapiz zadatak
+## Šta je urađeno
 
-<!-- Link ili oznaka zadatka. -->
+## Kako proveriti
 
-## Bezbednosni dokaz
+## Dijagram arhitekture / DFD
 
-- Asset / trust granica:
-- Threat ili misuse scenario:
-- Implementirana kontrola:
-- Negativan/security test:
-- Audit/evidence (ako je relevantno):
-- Preostali rizik / ograničenje:
+## Bezbednosni uslovi i negativni testovi
 
-## Provere
-
-- [ ] Build prolazi lokalno
-- [ ] Relevantni testovi prolaze
-- [ ] Nema commitovanih tajni ili stvarnih kredencijala
-- [ ] Dokumentacija i ADR/threat model su ažurirani kada je potrebno
-- [ ] Promena auth/authz ugovora ima review pogođenih timova
+## Zavisnosti prema drugim modulima

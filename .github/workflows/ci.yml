@@ -1,111 +1,28 @@
-name: CI
-
-# Globalni CI (GitHub čita workflow-e samo iz ovog foldera). Logiku testiranja ne piše CI nego svaki tim:
-# CI samo pokreće 'tests' profil iz services/<tNN>-*/docker-compose.yml za izmenjene AKTIVNE servise.
+name: Starter checks
 on:
-  pull_request:
-    branches: [main]
   push:
     branches: [main]
-
-permissions:
-  contents: read
-
-concurrency:
-  group: ci-${{ github.ref }}
-  # Na PR-u novi push otkazuje stari run; na main-u svaki merge mora dobiti svoj završen run.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
+  pull_request:
 jobs:
-  structure:
-    name: structure
+  backend:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - run: bash scripts/ci/check-structure.sh
-
-  secrets:
-    name: secrets
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-      - run: bash scripts/ci/check-secrets.sh
-
-  # Testovi zajedničkih skripti: compose politika (negativni slučajevi) i izolacija 'scutum.sh test'
-  # od razvojnog 'up' (pravi Docker, busybox kontejneri). Brzi su, pa se izvršavaju na svakom PR-u.
-  selftest:
-    name: selftest (scripts)
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-      - name: check-structure — negativni testovi compose politike
-        run: bash scripts/ci/selftest/check-structure.test.sh
-      - name: scutum.sh test — izolacija od razvojnog okruženja
-        run: bash scripts/ci/selftest/scutum-test-isolation.test.sh
-
-  detect:
-    name: detect changed services
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      services: ${{ steps.changed.outputs.services }}
-    steps:
-      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
         with:
-          fetch-depth: 0
-      - id: changed
-        env:
-          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-        run: echo "services=$(bash scripts/ci/changed-services.sh "$BASE_SHA" HEAD)" >> "$GITHUB_OUTPUT"
-
-  service-tests:
-    name: tests (${{ matrix.service }})
-    needs: detect
-    if: needs.detect.outputs.services != '[]'
+          dotnet-version: '10.0.x'
+      - name: Build API starter
+        run: dotnet build backend/Platform.Api/Platform.Api.csproj --configuration Release
+  frontend:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        service: ${{ fromJSON(needs.detect.outputs.services) }}
     steps:
       - uses: actions/checkout@v4
-      - name: Testovi servisa
-        env:
-          SERVICE: ${{ matrix.service }}
-        run: bash scripts/scutum.sh test "$SERVICE"
-      - name: Dokazi (TestResults)
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: actions/setup-node@v4
         with:
-          name: test-results-${{ matrix.service }}
-          path: services/${{ matrix.service }}-*/TestResults/
-          if-no-files-found: ignore
-
-  # Jedna provera koju treba tražiti kao "required" u branch protection-u.
-  ci-ok:
-    name: ci-ok
-    if: always()
-    # 'detect' mora biti u needs: ako on padne, service-tests je 'skipped', a to ne sme da se računa kao uspeh.
-    needs: [structure, secrets, selftest, detect, service-tests]
-    runs-on: ubuntu-latest
-    steps:
-      - env:
-          STRUCTURE: ${{ needs.structure.result }}
-          SECRETS: ${{ needs.secrets.result }}
-          SELFTEST: ${{ needs.selftest.result }}
-          DETECT: ${{ needs.detect.result }}
-          SERVICES: ${{ needs.detect.outputs.services }}
-          TESTS: ${{ needs.service-tests.result }}
-        run: |
-          echo "structure=$STRUCTURE secrets=$SECRETS selftest=$SELFTEST detect=$DETECT services=$SERVICES service-tests=$TESTS"
-          [ "$STRUCTURE" = success ] && [ "$SECRETS" = success ] && [ "$SELFTEST" = success ] && [ "$DETECT" = success ] || exit 1
-          # Preskakanje testova je dozvoljeno samo kada detect nije našao nijedan aktivan izmenjen servis.
-          if [ "$SERVICES" = "[]" ]; then
-            [ "$TESTS" = skipped ] || [ "$TESTS" = success ]
-          else
-            [ "$TESTS" = success ]
-          fi
+          node-version: '22'
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm install --no-audit --no-fund
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build

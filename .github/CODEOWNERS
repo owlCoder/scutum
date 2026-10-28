@@ -1,9 +1,0 @@
-# CODEOWNERS — vlasnici foldera po timovima.
-# Obavezan review od vlasnika važi samo ako nastavni tim uključi "Require review from Code Owners"
-# u branch protection pravilima. Do tada služi kao automatski predlog recenzenata.
-#
-# Svaki tim u SVOM PR-u dodaje liniju sa GitHub korisničkim imenima svojih članova, npr.:
-#   /services/t10-telemetry-detection/   @korisnik1 @korisnik2
-#
-# Pravilo: tim menja samo svoj folder; promene zajedničkih fajlova (scripts/, .github/, contracts/REGISTRY.md,
-# README.md) idu kroz PR sa review-om bar jednog drugog tima.
