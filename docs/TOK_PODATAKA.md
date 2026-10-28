@@ -1,24 +1,24 @@
-# Dijagram toka podataka — primer na nivou platforme
+# Data flow — platform-level example
 
-Ovo je samo početni, konceptualni primer toka. **KT1 zahteva zaseban DFD za deo svakog studenta**, sa stvarnim procesima, akterima i skladištima tog dela.
+This conceptual example is a starting point. KT1 requires each student to provide a separate DFD for their own component, including its actual processes, actors, and stores.
 
 ```mermaid
 flowchart LR
-  Student[Student] -->|Zahtev za vežbu| API[API + serverska provera dozvole]
-  API -->|Provera konteksta| Access[Identitet i autorizacija]
-  Access -->|Allow / Deny| API
-  API -->|Dozvoljena revizija| Catalog[(Objavljene revizije)]
-  API -->|Čuvanje odgovora| Attempt[(Pokušaji)]
-  Attempt -->|Snapshot odgovora| Eval[Evaluacija]
-  Eval -->|Ishod i feedback| Result[(Istorija rezultata)]
-  API -->|Bezbednosni događaj| Audit[(Audit log)]
-  Result -->|Dozvoljen prikaz| Student
+  Student[Student] -->|Lab request| API[API and server-side authorization]
+  API -->|Check context| Access[Identity and authorization]
+  Access -->|Allow / deny| API
+  API -->|Authorized revision| Catalog[(Published revisions)]
+  API -->|Save response| Attempt[(Attempts)]
+  Attempt -->|Response snapshot| Eval[Evaluation]
+  Eval -->|Outcome and feedback| Result[(Result history)]
+  API -->|Security event| Audit[(Audit log)]
+  Result -->|Authorized view| Student
 ```
 
-## Šta je obavezno označiti u sopstvenom DFD-u
+## Component DFD requirements
 
-1. Ulazne i izlazne podatke, spoljne aktere i inicijatore zahteva.
-2. Procese koji obrađuju podatke i skladišta kojima pristupaju.
-3. Granice poverenja i tačke serverske provere autorizacije.
-4. Negativan tok (odbijen zahtev / greška) i postupanje sa osetljivim podacima.
-5. Šta je već implementirano, a šta je planirano.
+1. Input and output data, external actors, and request initiators.
+2. Processes and the stores they access.
+3. Trust boundaries and server-side authorization checks.
+4. Negative flows and handling of sensitive data.
+5. The distinction between implemented and planned behavior.

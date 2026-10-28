@@ -1,40 +1,36 @@
-# Security Lab — platforma za interaktivne laboratorijske vežbe
+# Security Lab
 
-Početni šablon zajedničkog studentskog projekta prema dokumentu `docs/spec/Projektna_Specifikacija_OIB.pdf`.
+Security Lab is a collaborative student project for the Fundamentals of Information Security course. Its goal is to build an interactive laboratory platform as a modular monolith with well-defined module boundaries and contracts.
 
-Security Lab je zajednički studentski projekat iz Osnova informacione bezbednosti (OIB). Razvija se kao jedinstvena nastavna platforma u formi **modularnog monolita**, sa jasno razdvojenim funkcionalnim celinama i njihovim ugovorima.
+The repository contains a starter application, not a complete implementation: authentication, laboratories, authorization, evaluation, and persistent storage still need to be developed. The course project specification is available in [its original Serbian version](docs/spec/Projektna_Specifikacija_OIB.pdf).
 
-## Tehnološki okvir
+## Technology
 
-Referentne tehnologije u specifikaciji: React / TypeScript (korisnički interfejs), ASP.NET Core / C# (API i moduli), PostgreSQL (baza) i NUnit (testiranje). Dozvoljena je obrazložena zamena komponenti ako se sačuvaju domenska pravila i bezbednosne granice.
+The reference stack is React and TypeScript for the frontend, ASP.NET Core and C# for the API, PostgreSQL for data storage, and NUnit for tests. Alternative components may be used when justified and compatible with the domain rules and security boundaries.
 
-## Pokretanje početnog šablona
+## Getting started
 
-Potrebni su .NET SDK 10 i Node.js 22+.
+Requirements: .NET SDK 10 and Node.js 22.12 or later (or Node.js 24 or later).
 
-1. API: `cd backend/Platform.Api && dotnet run --urls http://localhost:5080`
-2. Frontend, u drugom terminalu: `cd frontend && npm install && npm run dev`
-3. Frontend na `http://localhost:5173`, health API na `http://localhost:5080/api/health`.
+1. Start the API: `cd backend/Platform.Api && dotnet run --urls http://localhost:5080`
+2. In another terminal, start the frontend: `cd frontend && npm ci && npm run dev`
+3. Open `http://localhost:5173`. The API health endpoint is `http://localhost:5080/api/health`.
 
-Ovaj kod je **samo početni scaffold**, nije implementacija funkcionalnih zahteva. U njemu nema studentskih naloga, stvarnih laboratorija, autorizacije, evaluator-a ili trajnog skladištenja.
+The optional local PostgreSQL service can be started with Docker Compose after copying `.env.example` to `.env` and setting the required credentials.
 
-## Organizacija
+## Repository structure
 
-- `backend/Platform.Api/` — ulazni API; poslovni moduli dodaju se uz jasne granice.
-- `frontend/` — početni React interfejs.
-- `docs/ARHITEKTURA.md` — konceptualne komponente i pravila.
-- `docs/TOK_PODATAKA.md` — početni tok podataka, uz obavezne zasebne DFD-ove za projektne celine.
-- `docs/PROJEKTNE_CELINE.md` — upis ID oznaka i odgovornosti (ne dodeljuje automatski timove).
-- `docs/KT1.md` i `docs/KT2.md` — kriterijumi provere.
-- `docs/templates/PROJEKTNA_CELINA.md` — obrazac za svaki studentski deo.
+- `backend/Platform.Api/` — API entry point.
+- `frontend/` — React application.
+- `docs/ARHITEKTURA.md` — conceptual architecture and module boundaries.
+- `docs/TOK_PODATAKA.md` — platform-level data flow example.
+- `docs/PROJEKTNE_CELINE.md` — project component assignments.
+- `docs/KT1.md` and `docs/KT2.md` — checkpoint requirements.
+- `docs/templates/PROJEKTNA_CELINA.md` — component documentation template.
 
-## Kontrolne tačke
+## Course checkpoints
 
-- **KT1 (4. vežba):** započet kod sopstvenog dela, dijagram arhitekture dela, dijagram toka podataka, dokaz individualnog doprinosa i kratka demonstracija.
-- **KT2 (8. vežba):** realizovan i proveren dodeljeni deo, odgovarajuće integracije, dokumentacija, testovi i završna demonstracija.
+- **KT1 (exercise 4):** initial implementation, component architecture and data flow diagrams, evidence of individual contribution, and a short demonstration.
+- **KT2 (exercise 8):** completed and tested assigned component, integrations, documentation, and final demonstration.
 
-Rad i provere usklađuju se sa projektnom specifikacijom u repozitorijumu.
-
-## Rad u repozitorijumu
-
-`main` sadrži integrisano stanje. Koristite kratkotrajne grane i pull request-ove po zadacima kada zaštita grane to zahteva; ne menjajte istoriju `main` pomoću `push --force`.
+See the course specification for the full requirements. Use short-lived branches and pull requests for changes; keep credentials and other secrets out of the repository.

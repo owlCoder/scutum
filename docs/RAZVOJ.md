@@ -1,11 +1,11 @@
-# Radni tok
+# Development workflow
 
-1. Preuzmi ažurni `main` i napravi kratkotrajnu granu za konkretnu celinu/zadatak.
-2. U opisu zadatka navedi stabilne ID-ove nove projektne specifikacije.
-3. Implementacija mora da ima jasnu odgovornost modula, server-side provere i validaciju.
-4. Dopuni arhitekturu svog dela i odgovarajući DFD.
-5. Uključi bar jedan negativan test kada postoji granica pristupa ili nevažeći ulaz.
-6. Otvori PR; označi kako se promena proverava i koje su zavisnosti.
-7. Ne prepisuj istoriju `main`, ne čuvaj tajne u repozitorijumu, ne briši rad drugih timova bez dogovora.
+1. Update `main` and create a short-lived branch for the component or task.
+2. Reference the relevant requirement IDs from the project specification.
+3. Implement clear module responsibilities, server-side checks, and validation.
+4. Update the component architecture and data flow diagrams.
+5. Include a negative test for access boundaries or invalid input where applicable.
+6. Open a pull request describing verification and dependencies.
+7. Do not rewrite `main`, commit secrets, or remove another team's work without agreement.
 
-Za prevođenje/scaffold početnog API-ja: `dotnet build backend/Platform.Api/Platform.Api.csproj`.
+Build the initial API with `dotnet build backend/Platform.Api/Platform.Api.csproj`.

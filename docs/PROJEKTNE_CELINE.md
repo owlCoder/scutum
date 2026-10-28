@@ -1,14 +1,12 @@
-# Projektne celine — dodela po ID oznakama
+# Project components and assignments
 
-Projektne celine i zahtevi određuju se prema aktuelnoj specifikaciji projekta Security Lab.
+Components and requirements are defined by the Security Lab project specification. Record confirmed assignments below.
 
-| Tim | Projektna celina 1 (ID) | Projektna celina 2 (ID) | Dodatno / napomena |
+| Team | Component 1 (ID) | Component 2 (ID) | Notes |
 | --- | --- | --- | --- |
-| Tim 1 |  |  |  |
-| Tim 2 |  |  |  |
-| ... |  |  |  |
-| Tim 32 |  |  |  |
+| Team 1 |  |  |  |
+| Team 2 |  |  |  |
+| … |  |  |  |
+| Team 32 |  |  |  |
 
-Oznake u formi `ID1`, `ID2` su **primeri formata**, ne potvrđene dodele. Asistent popunjava stvarne ID oznake. Svaki student priprema dokument svog dela prema obrascu `docs/templates/PROJEKTNA_CELINA.md`.
-
-Za identifikaciju funkcionalnih zahteva koristite postojeće stabilne ID-ove iz nove specifikacije, na primer `IDN-01`, `ACC-04`, `LAB-01`, `ATT-03`, `EVAL-02`. Ne menjati značenje ID-ova navedenih u dokumentu.
+Each student documents their component using the [component template](templates/PROJEKTNA_CELINA.md). Refer to the stable requirement IDs in the specification, such as `IDN-01`, `ACC-04`, `LAB-01`, `ATT-03`, and `EVAL-02`, without changing their meaning.

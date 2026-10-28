@@ -1,15 +1,15 @@
-## Projektna celina / ID zahteva
+## Component and requirement IDs
 
-- ID celine:
-- ID zahteva iz nove specifikacije:
-- Autor(i):
+- Component:
+- Requirements:
+- Author(s):
 
-## Šta je urađeno
+## Changes
 
-## Kako proveriti
+## Verification
 
-## Dijagram arhitekture / DFD
+## Architecture and data flow
 
-## Bezbednosni uslovi i negativni testovi
+## Security checks and negative tests
 
-## Zavisnosti prema drugim modulima
+## Dependencies

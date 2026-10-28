@@ -1,12 +1,12 @@
-# KT1 — 4. vežba: započet projekat i modeli dela
+# KT1 — Exercise 4: initial implementation and component models
 
-Svaki student prikazuje:
+Each student demonstrates:
 
-- [ ] Započet rad na sopstvenoj projektnoj celini: organizacija koda, commit(i), trenutno ponašanje.
-- [ ] Jasno objašnjenje svog doprinosa i odgovornosti.
-- [ ] **Dijagram arhitekture svog dela** sa komponentama, ugovorima i zavisnostima.
-- [ ] **Dijagram toka podataka (DFD)** svog dela sa akterima, procesima, skladištima i relevantnim granicama poverenja.
-- [ ] Kratku demonstraciju postojećeg koda ili konkretnog početnog toka.
-- [ ] Plan daljeg rada i dogovorene spoljne zavisnosti.
+- [ ] Initial work on their component, including code structure, commits, and current behavior.
+- [ ] A clear explanation of their responsibilities and individual contribution.
+- [ ] A component architecture diagram showing components, contracts, and dependencies.
+- [ ] A data flow diagram (DFD) showing actors, processes, stores, and relevant trust boundaries.
+- [ ] A short demonstration of existing code or an initial flow.
+- [ ] A plan for the remaining work and agreed external dependencies.
 
-**KT1 ne podrazumeva završetak svih delova ili kompletnu integraciju.** Dokumentacija bez stvarnog započetog koda nije dovoljna.
+KT1 does not require all components or integrations to be complete. Documentation alone is not a substitute for initial code.

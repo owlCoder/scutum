@@ -1,10 +1,10 @@
-# KT2 — 8. vežba: završen deo i demonstracija
+# KT2 — Exercise 8: completed component and demonstration
 
-- [ ] Dodeljeni deo implementiran u dogovorenom obimu prema novoj projektnoj specifikaciji.
-- [ ] Demonstracija funkcionalnog toka i relevantnih zavisnosti sa ostatkom sistema.
-- [ ] Pozitivni i negativni testovi, uključujući server-side autorizaciju/validaciju gde su primenljive.
-- [ ] Ažurni dijagrami arhitekture i tokova podataka, kao i uputstvo za pokretanje.
-- [ ] Svaki student može da objasni svoj kod, dizajn, testove i individualni doprinos.
-- [ ] Nema lozinki, pristupnih tokena, privatnih ključeva ili stvarnih studentskih odgovora u logovima i Git istoriji.
+- [ ] Implement the assigned component within the agreed scope and specification.
+- [ ] Demonstrate its functional flow and relevant integrations.
+- [ ] Provide positive and negative tests, including server-side authorization and validation where applicable.
+- [ ] Update architecture diagrams, data flow diagrams, and run instructions.
+- [ ] Explain the code, design, tests, and individual contribution.
+- [ ] Keep passwords, access tokens, private keys, and real student answers out of logs and Git history.
 
-Nivo obaveznih, proširenih i naprednih zahteva preuzima se iz projektne specifikacije.
+The specification defines the required, extended, and advanced requirement levels.

@@ -1,27 +1,27 @@
-# Konceptualna arhitektura platforme
+# Conceptual architecture
 
-Polazna osnova: poglavlje 3 nove projektne specifikacije. Predviđen je **modularni monolit**: interni moduli imaju jasne ugovore i ne čitaju/menjaju interno stanje susednih modula. Ovo je referentni dijagram koji studentski timovi treba da razrade za svoj deo.
+The platform is designed as a modular monolith. Internal modules communicate through explicit contracts and do not read or modify each other's internal state. This diagram is a starting point for component-level designs.
 
 ```mermaid
 flowchart TB
-  UI[React / TypeScript interfejs] --> API[ASP.NET Core API i kompozicija]
-  API --> ID[Identitet i pristup]
-  API --> LAB[Katalog i autorstvo laboratorija]
-  API --> ATT[Pokusaјi i evaluacija]
+  UI[React / TypeScript frontend] --> API[ASP.NET Core API and composition]
+  API --> ID[Identity and access]
+  API --> LAB[Laboratory catalog and authoring]
+  API --> ATT[Attempts and evaluation]
   ID --> DB[(PostgreSQL)]
   LAB --> DB
   ATT --> DB
-  ATT -. opciono .-> RUN[Izolovani evaluator / runner]
+  ATT -. optional .-> RUN[Isolated evaluator / runner]
 ```
 
-## Arhitekturne granice
+## Boundaries
 
-- **Identitet i pristup:** identifikacija korisnika, članstva, provera prava nad resursom.
-- **Katalog i autorstvo:** laboratorije, revizije, objavljivanje, dodavanje/dodela vežbi.
-- **Pokušaji i evaluacija:** čuvanje stanja, provera ishoda, povratne informacije.
-- **Podaci:** modul upravlja sopstvenim invarijantama i podacima; ne pristupati tuđem internom stanju mimo ugovora.
-- **Izvršavanje:** napredna mogućnost u zasebnoj granici poverenja, ne deo početnog obaveznog jezgra.
+- **Identity and access:** user identity, memberships, and resource authorization.
+- **Catalog and authoring:** laboratories, revisions, publication, and assignments.
+- **Attempts and evaluation:** attempt state, outcome checking, and feedback.
+- **Data:** each module owns its invariants and data; access other modules through their contracts.
+- **Execution:** an advanced capability in a separate trust boundary, outside the initial core.
 
-Referentni ugovori iz specifikacije: `IIdentityContext`, `IAccessDecision`, `ILabDefinitionReader`, `IAttemptStore`, `ILabEvaluator`, `IAuditWriter`; opciono `IExecutionGateway`.
+Reference contracts include `IIdentityContext`, `IAccessDecision`, `ILabDefinitionReader`, `IAttemptStore`, `ILabEvaluator`, `IAuditWriter`, and optionally `IExecutionGateway`.
 
-Svaka projektna celina izrađuje **svoj dijagram** prema obrascu u `docs/templates/PROJEKTNA_CELINA.md`.
+Each project component requires its own architecture diagram using the [component template](templates/PROJEKTNA_CELINA.md).

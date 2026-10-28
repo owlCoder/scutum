@@ -1,45 +1,47 @@
-# Projektna celina: [ID, naziv]
+# Project component: [ID, name]
 
-**Tim:** [broj]  
-**Student:** [ime / indeks]  
-**Zahtevi nove specifikacije:** [npr. LAB-01, ATT-03]
+**Team:** [number]
 
-## Odgovornost i granice
+**Student:** [name / student ID]
 
-- Obuhvaćeni procesi i korisnički scenariji:
-- Ugovori prema drugim modulima:
-- Stanje implementacije:
+**Specification requirements:** [e.g. LAB-01, ATT-03]
 
-## Dijagram arhitekture dela
+## Responsibilities and boundaries
 
-```mermaid
-flowchart LR
-  A[Ulazni API] --> B[Modul / servis]
-  B --> C[(Podaci modula)]
-```
+- Processes and user scenarios:
+- Contracts with other modules:
+- Implementation status:
 
-Zameniti primer stvarnom arhitekturom.
-
-## Dijagram toka podataka (DFD)
+## Component architecture
 
 ```mermaid
 flowchart LR
-  U[Spoljni akter] -->|Zahtev| P[Proces]
-  P -->|Upis / čitanje| D[(Skladište)]
-  P -->|Rezultat ili odbijanje| U
+  A[Incoming API] --> B[Module / service]
+  B --> C[(Module data)]
 ```
 
-Zameniti primer stvarnim tokovima, uključujući granice poverenja.
+Replace the example with the actual architecture.
 
-## Bezbednosni uslovi
+## Data flow diagram
 
-- Provere server-side pristupa:
-- Validacija ulaza i osetljivi podaci:
-- Negativni scenariji:
+```mermaid
+flowchart LR
+  U[External actor] -->|Request| P[Process]
+  P -->|Write / read| D[(Store)]
+  P -->|Result or denial| U
+```
 
-## Dokazi rada
+Replace the example with actual flows and trust boundaries.
 
-- Izmenjeni fajlovi / commit / PR:
-- Način pokretanja:
-- Testovi i rezultat:
-- Sledeći koraci:
+## Security requirements
+
+- Server-side access checks:
+- Input validation and sensitive data:
+- Negative scenarios:
+
+## Evidence of work
+
+- Changed files / commit / pull request:
+- Run instructions:
+- Tests and results:
+- Next steps:
