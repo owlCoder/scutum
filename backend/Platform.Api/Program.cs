@@ -1,13 +1,42 @@
+using Platform.Api.Domain.Identity;
+using Platform.Api.Services.Identity;
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<IAccountRepository, InMemoryAccountRepository>();
+builder.Services.AddSingleton<ISessionRevoker, NoOpSessionRevoker>();   // zameniti kad IDN-02 bude gotov
+builder.Services.AddSingleton<IAuditWriter, LoggerAuditWriter>();
+builder.Services.AddSingleton<IAdminDirectory, ConfigAdminDirectory>();
+builder.Services.AddSingleton<IAccessDecision, AdminOnlyAccessDecision>();
+builder.Services.AddScoped<ChangeAccountStatus>();
+
+if (builder.Environment.IsDevelopment())
+    builder.Services.AddScoped<IIdentityContext, StubIdentityContext>();
+else
+    builder.Services.AddScoped<IIdentityContext, AnonymousIdentityContext>();
+
 var app = builder.Build();
 
-// Starter endpoint only. Add domain APIs together with server-side authorization.
+// Probni nalozi samo za lokalni razvoj (izmišljeni domen example.com).
+if (app.Environment.IsDevelopment())
+{
+    var repo = app.Services.GetRequiredService<IAccountRepository>();
+    repo.Save(new UserAccount(Guid.Parse("11111111-1111-1111-1111-111111111111"), "admin@example.com"));
+    repo.Save(new UserAccount(Guid.Parse("22222222-2222-2222-2222-222222222222"), "student@example.com"));
+    repo.Save(new UserAccount(Guid.Parse("33333333-3333-3333-3333-333333333333"), "other@example.com"));
+}
+
 app.MapGet("/api/health", () => Results.Ok(new
 {
     status = "ok",
     service = "security-lab-api",
     note = "Initial scaffold; not a production-ready laboratory platform"
 }));
+
+app.MapControllers();
 
 app.Run();
 
