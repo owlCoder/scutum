@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<IAccountRepository, InMemoryAccountRepository>();
+builder.Services.AddSingleton<IAccountRepository, InMemoryAccountRepository>(); // TODO: zameniti trajnim repozitorijumom (PostgreSQL)
 builder.Services.AddSingleton<ISessionRevoker, NoOpSessionRevoker>();   // zameniti kad IDN-02 bude gotov
 builder.Services.AddSingleton<IAuditWriter, LoggerAuditWriter>();
 builder.Services.AddSingleton<IAdminDirectory, ConfigAdminDirectory>();
