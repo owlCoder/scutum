@@ -5,7 +5,7 @@ Components and requirements are defined by the Security Lab project specificatio
 | Team | Component 1 (ID) | Component 2 (ID) | Notes |
 | --- | --- | --- | --- |
 | Team 1 |  |  |  |
-| Team 2 |  |  |  |
+| Team 2 | IDN-03 Account status | | Igor Cvijić (PR 21/2023): IDN-03; |
 | … |  |  |  |
 | Team 32 |  |  |  |
 
