@@ -4,4 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Team21.Acc.Api\Team21.Acc.Api.csproj" />
+  </ItemGroup>
 </Project>
