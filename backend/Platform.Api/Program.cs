@@ -1,7 +1,7 @@
 using Platform.Api.Modules.Laboratories;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddLaboratories();
+builder.Services.AddLaboratories(builder.Environment);
 var app = builder.Build();
 
 // Starter endpoint only. Add domain APIs together with server-side authorization.
