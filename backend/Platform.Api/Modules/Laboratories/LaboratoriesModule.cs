@@ -1,3 +1,4 @@
+using Platform.Api.Modules.Laboratories.Api;
 using Platform.Api.Modules.Laboratories.Application;
 using Platform.Api.Modules.Laboratories.Infrastructure;
 
@@ -30,6 +31,7 @@ public static class LaboratoriesModule
 
     public static IEndpointRouteBuilder MapLaboratories(this IEndpointRouteBuilder app)
     {
+        app.MapLaboratoriesEndpoints();
         return app;
     }
 }
