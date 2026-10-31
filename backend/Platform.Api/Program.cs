@@ -1,7 +1,10 @@
 using Platform.Api.Domain.Identity;
+using Platform.Api.Modules.Access.Demo;
 using Platform.Api.Services.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
+var accessDemoEnabled = AccessDemoEndpoints.Enabled(builder.Environment, builder.Configuration);
+if (accessDemoEnabled) builder.Services.AddAccessKt1Demo();
 
 builder.Services.AddControllers();
 builder.Services.AddHttpContextAccessor();
@@ -19,6 +22,11 @@ else
     builder.Services.AddScoped<IIdentityContext, AnonymousIdentityContext>();
 
 var app = builder.Build();
+if (accessDemoEnabled)
+{
+    app.UseAuthentication();
+    app.MapAccessKt1Demo();
+}
 
 // Probni nalozi samo za lokalni razvoj (izmišljeni domen example.com).
 if (app.Environment.IsDevelopment())
