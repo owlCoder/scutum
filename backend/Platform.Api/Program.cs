@@ -8,10 +8,13 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<IAccountRepository, InMemoryAccountRepository>(); // TODO: zameniti trajnim repozitorijumom (PostgreSQL)
 builder.Services.AddSingleton<ISessionRevoker, NoOpSessionRevoker>();   // zameniti kad IDN-02 bude gotov
+builder.Services.AddSingleton<ICredentialAuthenticator, UnavailableCredentialAuthenticator>(); // zameniti IDN-02 implementacijom
+builder.Services.AddSingleton<ISessionIssuer, UnavailableSessionIssuer>(); // zameniti IDN-02 implementacijom
 builder.Services.AddSingleton<IAuditWriter, LoggerAuditWriter>();
 builder.Services.AddSingleton<IAdminDirectory, ConfigAdminDirectory>();
 builder.Services.AddSingleton<IAccessDecision, AdminOnlyAccessDecision>();
 builder.Services.AddScoped<ChangeAccountStatus>();
+builder.Services.AddScoped<LoginAccount>();
 
 if (builder.Environment.IsDevelopment())
     builder.Services.AddScoped<IIdentityContext, StubIdentityContext>();

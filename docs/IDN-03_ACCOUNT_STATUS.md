@@ -6,7 +6,11 @@
 
 **Specification requirements:** IDN-03 (primary), ADM-01, AUD-01, AUD-04, ACC-05, SEC-01, UC-05. Depends on IDN-02 (sessions) and ADM-02 (database migrations), see [Status](#implementation-status).
 
-**User story:** As an administrator, I want to change a user account's status to active, blocked or archived, so that I can control access to the system.
+**User story:** As an administrator, I want blocked and archived accounts to be unable to sign in, so that unauthorized access is prevented.
+
+The administrator status-change endpoint described below sets `ACTIVE`, `BLOCKED`
+or `ARCHIVED`. The login flow enforces that only `ACTIVE` accounts proceed to
+session issuance.
 
 ## Responsibilities and boundaries
 
@@ -23,6 +27,8 @@
 |`IAccessDecision`|decides who may change status|implemented (administrator only, deny by default)|
 |`IAccountRepository`|persistence of accounts|**in-memory**, PostgreSQL pending|
 |`ISessionRevoker`|revokes sessions, owned by IDN-02|**no-op stub**|
+|`ICredentialAuthenticator`|verifies login credentials, owned by IDN-02|safe unavailable stub|
+|`ISessionIssuer`|creates a session for an active account, owned by IDN-02|safe unavailable stub|
 |`IAuditWriter`|structured security record|implemented (writes to application log)|
 
 * Implementation status: see [Implementation status](#implementation-status).
@@ -39,11 +45,20 @@ flowchart LR
   UC --> Rev\[ISessionRevoker]
   UC --> Aud\[IAuditWriter]
   UC --> Dom\[UserAccount / AccountStatus]
+  Login\[LoginController] --> LoginUC\[LoginAccount]
+  LoginUC --> Cred\[ICredentialAuthenticator]
+  LoginUC --> Repo
+  LoginUC --> Issue\[ISessionIssuer]
   Ctx -. stub, IDN-02 .-> Ident\[Identity module]
   Rev -. no-op, IDN-02 .-> Ident
   Repo -. in-memory, ADM-02 .-> DB\[(PostgreSQL, planned)]
   Aud --> Log\[(Application log)]
 ```
+
+Login status gate: credentials are verified first; the server then reads the
+account status. `BLOCKED` and `ARCHIVED` return 403 with specific messages.
+`ACTIVE` proceeds to session issuance. See the login flow in
+[the platform data-flow diagram](DATA_FLOW.md#identity-login-flow-idn-02--idn-03).
 
 Layers: `Controllers/Identity` only translates the result into an HTTP code. `Services/Identity` holds the use-case and the contracts. `Domain/Identity` holds the enum and the entity. Adapters (`Adapters.cs`) are the replaceable technical parts.
 
@@ -115,6 +130,8 @@ Order of checks in the use-case: authenticated, then administrator, then status 
 |Forged audit lines through the reason|control characters removed|`Reason\_CannotInjectFakeAuditLines`|
 |Blocked or archived account keeps sessions|`ISessionRevoker` called|`Admin\_CanBlockAccount\_...`, `Admin\_CanArchiveAccount\_SessionsRevoked`|
 |Reactivation wrongly revokes sessions|revoke only for Blocked and Archived|`Admin\_CanActivateBlockedAccount\_SessionsNotRevoked`|
+|Valid credentials for a blocked account|status gate rejects before session issuance|Automated test pending; expected `account_blocked`, 403, Serbian message|
+|Valid credentials for an archived account|status gate rejects before session issuance|Automated test pending; expected `account_archived`, 403, Serbian message|
 
 ## Evidence of work
 
@@ -152,15 +169,20 @@ Order of checks in the use-case: authenticated, then administrator, then status 
 |Acceptance criterion|Status|
 |-|-|
 |Administrator can set `ACTIVE`, `BLOCKED` or `ARCHIVED`|Done, covered by tests|
+|`BLOCKED` account cannot log in|Status gate implemented; credential and session adapters remain IDN-02 placeholders|
+|`ARCHIVED` account cannot log in|Status gate implemented; credential and session adapters remain IDN-02 placeholders|
+|`ACTIVE` account can log in when other conditions pass|Status gate permits session issuance; actual authentication and session creation await IDN-02|
+|Rejected login displays an appropriate message|Implemented for invalid credentials and each account status|
 |System stores the new status in the database|**Partial.** Stored behind `IAccountRepository`, currently in memory, so data is lost on restart. PostgreSQL storage and migration (ADM-02) are a separate task|
 |Only an authorized administrator can change status|Done, server-side, covered by negative tests|
 |The change is recorded|Done, audit event with actor, target, time, outcome and correlation ID. Currently written to the application log|
-|Blocking revokes all sessions, new logins are refused (IDN-03)|**Partial.** The use-case calls `ISessionRevoker`, but the implementation is a no-op until IDN-02. Refusing login for blocked or archived accounts belongs to IDN-02|
+|Blocking revokes all sessions|**Partial.** The use-case calls `ISessionRevoker`, but the implementation is a no-op until IDN-02|
 
 ## Known limitations and residual risk
 
 * In-memory storage, replace `InMemoryAccountRepository` with a PostgreSQL implementation. The use-case and tests stay unchanged.
 * `NoOpSessionRevoker` does not revoke anything yet. Until IDN-02 is done, a blocked account keeps working sessions.
+* `UnavailableCredentialAuthenticator` and `UnavailableSessionIssuer` fail closed. Until IDN-02 replaces them, login requests return 503 before real credential verification or session creation; the status gate is ready for those adapters.
 * The identity stub trusts the `X-Stub-User` header. It is registered only in the Development environment, and any other environment returns 401 for every request.
 * The audit event goes to the application log. A persistent audit store (shared `IAuditWriter` contract) is still to be agreed with the team that owns auditing.
 * There is no concurrency control, two administrators changing the same account at the same time result in the last write winning.
@@ -170,7 +192,7 @@ Order of checks in the use-case: authenticated, then administrator, then status 
 ## Next steps
 
 1. Agree with the owner of IDN-01 and the database task on a single user entity and `DbContext`, then add the PostgreSQL repository and migration.
-2. Replace `NoOpSessionRevoker` and the identity stub when IDN-02 is available, and add a contract test against the real implementation.
+2. Replace the login and session placeholders, `NoOpSessionRevoker`, and the identity stub when IDN-02 is available, then verify the contract between authentication and account status.
 3. Move `IAuditWriter` to the shared audit contract when it is agreed.
 4. Add `dotnet test` to the CI workflow.
 
